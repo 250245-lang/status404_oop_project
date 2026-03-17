@@ -7,17 +7,19 @@ import parkinglot.constants.VehicleType;
 import parkinglot.models.vehicles.Vehicle;
 
 @Entity
-@DiscriminatorValue("COMPACT")
-public class CompactSpot extends ParkingSpot {
-    protected CompactSpot(){super();}
-    public CompactSpot(String number) {
-        super(number, ParkingSpotType.COMPACT);
+@DiscriminatorValue("ELECTRIC")
+public class ElectricSpot extends ParkingSpot {
+
+    protected ElectricSpot(){super();}
+
+    public ElectricSpot(String number) {
+        super(number, ParkingSpotType.ELECTRIC);
     }
 
     @Override
     public boolean assignVehicle(Vehicle vehicle) {
-        if (vehicle.getType() == VehicleType.TRUCK || vehicle.getType() == VehicleType.VAN) {
-            System.out.println("Compact spot cannot accommodate " + vehicle.getType());
+        if (vehicle.getType() != VehicleType.ELECTRIC) {
+            System.out.println("Electric spot is reserved for electric vehicles only. Received: " + vehicle.getType());
             return false;
         }
         return super.assignVehicle(vehicle);
