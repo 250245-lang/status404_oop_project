@@ -1,5 +1,7 @@
 package parkinglot.models;
 
+import parkinglot.constants.ParkingSpotType;
+import parkinglot.constants.VehicleType;
 import parkinglot.models.spots.ParkingSpot;
 import parkinglot.models.vehicles.Vehicle;
 import java.util.ArrayList;
@@ -27,9 +29,10 @@ public class ParkingFloor {
     }
 
     public ParkingSpot assignVehicleToSlot(Vehicle vehicle) {
-        // Simple 'First Available Spot' logic for now
+        ParkingSpotType required = getRequiredSpotType(vehicle.getType());
+
         ParkingSpot spot = spots.stream()
-                .filter(ParkingSpot::isFree)
+                .filter(s -> s.getType() == required && s.isFree())
                 .findFirst()
                 .orElse(null);
 
@@ -37,6 +40,16 @@ public class ParkingFloor {
             spot.assignVehicle(vehicle);
         }
         return spot;
+    }
+
+    private ParkingSpotType getRequiredSpotType(VehicleType vehicleType) {
+        switch (vehicleType) {
+            case MOTORBIKE: return ParkingSpotType.MOTORBIKE;
+            case ELECTRIC:  return ParkingSpotType.ELECTRIC;
+            case TRUCK:
+            case VAN:       return ParkingSpotType.LARGE;
+            default:        return ParkingSpotType.COMPACT;
+        }
     }
 
     public boolean freeSlot(ParkingSpot spot) {
