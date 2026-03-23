@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import parkinglot.managers.JwtService;
 import parkinglot.server.repository.AccountRepository;
+import parkinglot.users.Admin;
+import parkinglot.users.ParkingAttendant;
 import parkinglot.utils.LoginResponse;
 
 @RestController
@@ -24,7 +26,10 @@ public class AccountController {
         return accountRepo.findById(user)
                 .filter(acc -> acc.login(user, pass))
                 .map(acc -> {
-                    String role = "ROLE_USER"; // Basic role for now
+                    String role = "ROLE_USER";
+                    if (acc instanceof Admin) role = "ROLE_ADMIN";
+                    else if (acc instanceof ParkingAttendant) role = "ROLE_ATTENDANT";
+                    
                     String token = jwtService.generateToken(acc.getUserName(), role);
                     return ResponseEntity.ok(new LoginResponse(token, acc));
                 })
