@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import parkinglot.constants.AccountStatus;
 
 @Entity
-public class Account {
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "account_type")
+public abstract class Account {
 
     @Id
     private String userName;
@@ -27,6 +29,7 @@ public class Account {
     }
 
     public boolean login(String userName, String password) {
+        if (status != AccountStatus.ACTIVE) return false;
         return this.userName != null && this.userName.equals(userName) && 
                this.password != null && this.password.equals(password);
     }
