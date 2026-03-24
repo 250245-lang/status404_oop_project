@@ -1,10 +1,12 @@
 package parkinglot.ui.login_system;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.*;
 import javafx.scene.control.*;
 import parkinglot.managers.AppContext;
+import parkinglot.users.Account;
 
 public class LoginWindow {
 
@@ -50,11 +52,36 @@ public class LoginWindow {
             if (user.isEmpty() || pass.isEmpty()) {
                 loginLabel.setText("Missing Credentials");
                 loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
-            } else {
-                loginLabel.setText("Verifying...");
-                loginLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold; -fx-font-size: 20px;");
-                // Authentication logic will be added in the next stage
+                return;
             }
+
+            loginButton.setDisable(true);
+            loginLabel.setText("Verifying...");
+            loginLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold; -fx-font-size: 20px;");
+
+            new Thread(() -> {
+                try {
+                    Account account = appContext.apiManager.login(user, pass, false);
+                    Platform.runLater(() -> {
+                        if (account != null) {
+                            appContext.setAccount(account);
+                            loginLabel.setText("Success!");
+                            loginLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 20px;");
+                            // Navigation logic will be added when windows are ready
+                        } else {
+                            loginLabel.setText("Access Denied");
+                            loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
+                            loginButton.setDisable(false);
+                        }
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        loginLabel.setText("Connection Error");
+                        loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
+                        loginButton.setDisable(false);
+                    });
+                }
+            }).start();
         });
 
         loginCard.getChildren().addAll(loginLabel, usernameField, passwordField, loginButton);
