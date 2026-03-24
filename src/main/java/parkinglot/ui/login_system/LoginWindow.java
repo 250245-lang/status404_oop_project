@@ -3,7 +3,7 @@ package parkinglot.ui.login_system;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.*;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 import parkinglot.managers.AppContext;
 
 public class LoginWindow {
@@ -22,10 +22,43 @@ public class LoginWindow {
         VBox mainLayout = new VBox(25);
         mainLayout.setAlignment(Pos.CENTER);
 
+        VBox loginCard = new VBox(20);
+        loginCard.setMaxWidth(400);
+        loginCard.setPadding(new Insets(35, 40, 35, 40));
+        loginCard.setStyle("-fx-background-color: white; -fx-background-radius: 15;");
+
         Label loginLabel = new Label("Staff Authentication");
         loginLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        mainLayout.getChildren().add(loginLabel);
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("Username");
+        usernameField.setPrefHeight(40);
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+        passwordField.setPrefHeight(40);
+
+        Button loginButton = new Button("LOG IN");
+        loginButton.setMaxWidth(Double.MAX_VALUE);
+        loginButton.setPrefHeight(45);
+        loginButton.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        loginButton.setOnAction(e -> {
+            String user = usernameField.getText().trim();
+            String pass = passwordField.getText();
+
+            if (user.isEmpty() || pass.isEmpty()) {
+                loginLabel.setText("Missing Credentials");
+                loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
+            } else {
+                loginLabel.setText("Verifying...");
+                loginLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold; -fx-font-size: 20px;");
+                // Authentication logic will be added in the next stage
+            }
+        });
+
+        loginCard.getChildren().addAll(loginLabel, usernameField, passwordField, loginButton);
+        mainLayout.getChildren().add(loginCard);
         root.getChildren().add(mainLayout);
 
         appContext.resetToView(root, "Login", 635, 650, false);
