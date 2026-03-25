@@ -1,6 +1,8 @@
 package parkinglot.models;
 
 import jakarta.persistence.*;
+import parkinglot.models.spots.ParkingSpot;
+import parkinglot.models.vehicles.Vehicle;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +35,16 @@ public class ParkingLot {
 
     public void addParkingFloor(ParkingFloor floor) {
         floors.add(floor);
+    }
+
+    public ParkingSpot assignVehicle(Vehicle vehicle) {
+        for (ParkingFloor floor : floors) {
+            ParkingSpot spot = floor.assignVehicleToSlot(vehicle);
+            if (spot != null) {
+                return spot;
+            }
+        }
+        return null;
     }
 
     // Getters / Setters
