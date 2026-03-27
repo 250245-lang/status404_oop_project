@@ -3,10 +3,12 @@ package parkinglot.models;
 import jakarta.persistence.*;
 import parkinglot.constants.ParkingSpotType;
 import parkinglot.constants.VehicleType;
+import parkinglot.constants.ParkingTicketStatus;
 import parkinglot.models.spots.ParkingSpot;
 import parkinglot.models.vehicles.Vehicle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 public class ParkingLot {
@@ -72,6 +74,30 @@ public class ParkingLot {
         allTickets.add(ticket);
 
         return ticket;
+    }
+
+    public boolean vehicleExit(Vehicle vehicle) {
+        ParkingTicket ticket = vehicle.getTicket();
+        if (ticket == null || !ticket.isPaid()) {
+            System.out.println("Invalid or unpaid ticket for vehicle: " + vehicle.getLicenseNumber());
+            return false;
+        }
+
+        String spotNumber = ticket.getSpotNumber();
+        for (ParkingFloor floor : floors) {
+            Optional<ParkingSpot> spotOpt = floor.getSpots().stream()
+                    .filter(s -> s.getNumber().equals(spotNumber))
+                    .findFirst();
+            if (spotOpt.isPresent()) {
+                floor.freeSlot(spotOpt.get());
+                break;
+            }
+        }
+
+        ticket.setStatus(ParkingTicketStatus.COMPLETED);
+        vehicle.setTicket(null);
+        System.out.println("[EXIT] Vehicle " + vehicle.getLicenseNumber() + " exited successfully.");
+        return true;
     }
 
     private ParkingSpotType mapVehicleToSpotType(VehicleType vehicleType) {
