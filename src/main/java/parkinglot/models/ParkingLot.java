@@ -1,6 +1,8 @@
 package parkinglot.models;
 
 import jakarta.persistence.*;
+import parkinglot.constants.ParkingSpotType;
+import parkinglot.constants.VehicleType;
 import parkinglot.models.spots.ParkingSpot;
 import parkinglot.models.vehicles.Vehicle;
 import java.util.ArrayList;
@@ -23,6 +25,10 @@ public class ParkingLot {
     @JoinColumn(name = "parking_lot_id")
     private List<ParkingFloor> floors = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "parking_lot_id")
+    private List<ParkingTicket> allTickets = new ArrayList<>();
+
     protected ParkingLot() {}
 
     public ParkingLot(String id, String name, Location address) {
@@ -31,20 +37,51 @@ public class ParkingLot {
         this.address = address;
         this.parkingRate = new ParkingRate();
         this.floors = new ArrayList<>();
+        this.allTickets = new ArrayList<>();
     }
 
     public void addParkingFloor(ParkingFloor floor) {
         floors.add(floor);
     }
 
-    public ParkingSpot assignVehicle(Vehicle vehicle) {
+    public boolean isFullForType(VehicleType vehicleType) {
+        ParkingSpotType required = mapVehicleToSpotType(vehicleType);
+        return floors.stream().noneMatch(f -> {
+            return f.getSpots().stream().anyMatch(s -> s.getType() == required && s.isFree());
+        });
+    }
+
+    public ParkingTicket vehicleEntry(Vehicle vehicle) {
+        if (isFullForType(vehicle.getType())) {
+            System.out.println("Parking lot is full for vehicle type: " + vehicle.getType());
+            return null;
+        }
+
+        ParkingSpot assignedSpot = null;
         for (ParkingFloor floor : floors) {
-            ParkingSpot spot = floor.assignVehicleToSlot(vehicle);
-            if (spot != null) {
-                return spot;
+            assignedSpot = floor.assignVehicleToSlot(vehicle);
+            if (assignedSpot != null) {
+                break;
             }
         }
-        return null;
+
+        if (assignedSpot == null) return null;
+
+        ParkingTicket ticket = new ParkingTicket(vehicle.getLicenseNumber(), assignedSpot.getNumber());
+        vehicle.assignTicket(ticket);
+        allTickets.add(ticket);
+
+        return ticket;
+    }
+
+    private ParkingSpotType mapVehicleToSpotType(VehicleType vehicleType) {
+        switch (vehicleType) {
+            case MOTORBIKE: return ParkingSpotType.MOTORBIKE;
+            case ELECTRIC:  return ParkingSpotType.ELECTRIC;
+            case TRUCK:
+            case VAN:       return ParkingSpotType.LARGE;
+            default:        return ParkingSpotType.COMPACT;
+        }
     }
 
     // Getters / Setters
@@ -56,4 +93,5 @@ public class ParkingLot {
     public ParkingRate getParkingRate() { return parkingRate; }
     public void setParkingRate(ParkingRate parkingRate) { this.parkingRate = parkingRate; }
     public List<ParkingFloor> getFloors() { return floors; }
+    public List<ParkingTicket> getAllTickets() { return allTickets; }
 }
