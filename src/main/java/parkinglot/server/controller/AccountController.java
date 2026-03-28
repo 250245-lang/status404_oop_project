@@ -1,7 +1,6 @@
 package parkinglot.server.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import parkinglot.managers.JwtService;
@@ -13,7 +12,7 @@ import parkinglot.utils.LoginResponse;
 @RestController
 @RequestMapping("/api/accounts")
 @CrossOrigin
-public class AccountController {
+public class AccountController extends BaseController {
 
     @Autowired
     private AccountRepository accountRepo;
@@ -22,7 +21,7 @@ public class AccountController {
     private JwtService jwtService;
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestParam String user, @RequestParam String pass) {
+    public ResponseEntity<?> login(@RequestParam String user, @RequestParam String pass) {
         return accountRepo.findById(user)
                 .filter(acc -> acc.login(user, pass))
                 .map(acc -> {
@@ -31,14 +30,14 @@ public class AccountController {
                     else if (acc instanceof ParkingAttendant) role = "ROLE_ATTENDANT";
                     
                     String token = jwtService.generateToken(acc.getUserName(), role);
-                    return ResponseEntity.ok(new LoginResponse(token, acc));
+                    return success(new LoginResponse(token, acc));
                 })
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+                .orElse(unauthorized("Invalid credentials"));
     }
 
     @PostMapping("/hardware-login")
-    public ResponseEntity<LoginResponse> hardwareLogin() {
+    public ResponseEntity<?> hardwareLogin() {
         String token = jwtService.generateToken("SYSTEM_HARDWARE", "ROLE_ADMIN"); 
-        return ResponseEntity.ok(new LoginResponse(token, null));
+        return success(new LoginResponse(token, null));
     }
 }
