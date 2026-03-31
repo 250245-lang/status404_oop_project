@@ -17,7 +17,7 @@ public class AdminWindow {
     public void show() {
         TabPane tabPane = new TabPane();
         
-        Tab dashboardTab = new Tab("Dashboard", createPlaceholder("Dashboard View"));
+        Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
         Tab floorTab = new Tab("Floors", createPlaceholder("Floor Management"));
         Tab userTab = new Tab("Users", createPlaceholder("User Management"));
 
