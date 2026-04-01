@@ -53,7 +53,7 @@ public class ParkingLot {
         });
     }
 
-    public ParkingTicket vehicleEntry(Vehicle vehicle) {
+    public synchronized ParkingTicket vehicleEntry(Vehicle vehicle) {
         if (isFullForType(vehicle.getType())) {
             System.out.println("Parking lot is full for vehicle type: " + vehicle.getType());
             return null;
@@ -76,7 +76,7 @@ public class ParkingLot {
         return ticket;
     }
 
-    public boolean vehicleExit(Vehicle vehicle) {
+    public synchronized boolean vehicleExit(Vehicle vehicle) {
         ParkingTicket ticket = vehicle.getTicket();
         if (ticket == null || !ticket.isPaid()) {
             System.out.println("Invalid or unpaid ticket for vehicle: " + vehicle.getLicenseNumber());
