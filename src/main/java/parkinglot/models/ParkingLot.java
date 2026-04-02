@@ -100,6 +100,13 @@ public class ParkingLot {
         return true;
     }
 
+    public ParkingTicket findTicket(String ticketNumber) {
+        return allTickets.stream()
+                .filter(t -> t.getTicketNumber().equals(ticketNumber))
+                .findFirst()
+                .orElse(null);
+    }
+
     private ParkingSpotType mapVehicleToSpotType(VehicleType vehicleType) {
         switch (vehicleType) {
             case MOTORBIKE: return ParkingSpotType.MOTORBIKE;

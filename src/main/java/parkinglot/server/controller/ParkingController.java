@@ -8,9 +8,11 @@ import org.springframework.web.server.ResponseStatusException;
 import parkinglot.constants.VehicleType;
 import parkinglot.models.ParkingLot;
 import parkinglot.models.ParkingTicket;
+import parkinglot.models.vehicles.Vehicle;
 import parkinglot.models.vehicles.*;
 import parkinglot.server.repository.ParkingLotRepository;
 import parkinglot.server.repository.VehicleRepository;
+import parkinglot.payment.CreditCardTransaction;
 
 @RestController
 @RequestMapping("/api/parking")
@@ -53,18 +55,51 @@ public class ParkingController extends BaseController {
         }
     }
 
+    @GetMapping("/calculate-fee/{ticketNumber}")
+    public ResponseEntity<Double> calculateFee(@PathVariable String ticketNumber) {
+        ParkingLot lot = lotRepo.findAll().stream().findFirst().orElseThrow();
+        ParkingTicket ticket = lot.findTicket(ticketNumber);
+        if (ticket == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket not found");
+
+        long mockHours = ticket.getParkingDurationMinutes() + 1;
+        double fee = lot.getParkingRate().calculateFee(mockHours * 60);
+        return success(fee);
+    }
+
+    @PostMapping("/pay")
+    public ResponseEntity<String> pay(@RequestParam String ticketNumber, @RequestParam double amount, @RequestParam String method) {
+        ParkingLot lot = lotRepo.findAll().stream().findFirst().orElseThrow();
+        ParkingTicket ticket = lot.findTicket(ticketNumber);
+        if (ticket == null) return error("Ticket not found", HttpStatus.NOT_FOUND);
+        if (ticket.isPaid()) return error("Already paid", HttpStatus.BAD_REQUEST);
+
+        long mockHours = ticket.getParkingDurationMinutes() + 1;
+        double correctFee = lot.getParkingRate().calculateFee(mockHours * 60);
+
+        if (method.equalsIgnoreCase("CASH")) {
+            if (amount < correctFee) return error("Insufficient amount", HttpStatus.BAD_REQUEST);
+            ticket.markPaid(correctFee);
+            lotRepo.save(lot);
+            return success("Paid with cash. Change: " + (amount - correctFee));
+        } else if (method.equalsIgnoreCase("CREDIT")) {
+            CreditCardTransaction payment = new CreditCardTransaction(correctFee, "Demo User", "0000-0000-0000-0000", 123);
+            if (payment.initiateTransaction()) {
+                ticket.markPaid(correctFee);
+                lotRepo.save(lot);
+                return success("Paid with credit card");
+            }
+        }
+        return error("Payment failed", HttpStatus.BAD_REQUEST);
+    }
+
     @PostMapping("/exit")
     public ResponseEntity<String> exitVehicle(@RequestParam String ticketNumber) {
         ParkingLot lot = lotRepo.findAll().stream().findFirst().orElseThrow();
-        ParkingTicket ticket = lot.getAllTickets().stream()
-                .filter(t -> t.getTicketNumber().equals(ticketNumber))
-                .findFirst()
-                .orElse(null);
+        ParkingTicket ticket = lot.findTicket(ticketNumber);
 
         if (ticket == null) return error("Ticket not found", HttpStatus.NOT_FOUND);
         if (!ticket.isPaid()) return error("Ticket not paid", HttpStatus.BAD_REQUEST);
 
-        // Simple exit logic for now: find vehicle by license
         Vehicle v = vehicleRepo.findById(ticket.getVehicleLicense()).orElse(null);
         if (v == null) return error("Vehicle not found", HttpStatus.NOT_FOUND);
 
