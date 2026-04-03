@@ -27,7 +27,7 @@ public class LoginWindow {
         VBox loginCard = new VBox(20);
         loginCard.setMaxWidth(400);
         loginCard.setPadding(new Insets(35, 40, 35, 40));
-        loginCard.setStyle("-fx-background-color: white; -fx-background-radius: 15;");
+        loginCard.setStyle("-fx-background-color: white; -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 20, 0, 0, 10);");
 
         Label loginLabel = new Label("Staff Authentication");
         loginLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
@@ -61,13 +61,14 @@ public class LoginWindow {
 
             new Thread(() -> {
                 try {
+                    // Actual API call via APIManager
                     Account account = appContext.apiManager.login(user, pass, false);
                     Platform.runLater(() -> {
                         if (account != null) {
                             appContext.setAccount(account);
-                            loginLabel.setText("Success!");
+                            loginLabel.setText("Access Granted");
                             loginLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 20px;");
-                            // Navigation logic will be added when windows are ready
+                            // Navigation logic to AdminWindow will be integrated next
                         } else {
                             loginLabel.setText("Access Denied");
                             loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
