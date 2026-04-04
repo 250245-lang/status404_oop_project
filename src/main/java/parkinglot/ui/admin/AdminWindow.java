@@ -19,7 +19,7 @@ public class AdminWindow {
         
         Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
         Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext).getContent());
-        Tab userTab = new Tab("Users", createPlaceholder("User Management"));
+        Tab userTab = new Tab("Users", new UsersTab(appContext).getContent());
 
         tabPane.getTabs().addAll(dashboardTab, floorTab, userTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
