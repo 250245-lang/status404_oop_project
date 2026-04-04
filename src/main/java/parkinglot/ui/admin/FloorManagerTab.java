@@ -1,10 +1,12 @@
 package parkinglot.ui.admin;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import parkinglot.constants.ParkingSpotType;
 import parkinglot.managers.AppContext;
 import parkinglot.models.spots.ParkingSpot;
 
@@ -38,7 +40,13 @@ public class FloorManagerTab {
         ListView<String> floorListView = new ListView<>();
         VBox.setVgrow(floorListView, Priority.ALWAYS);
 
-        floorListContainer.getChildren().addAll(floorListTitle, floorListView);
+        TextField newFloorField = new TextField();
+        newFloorField.setPromptText("New Floor Name...");
+        Button addFloorBtn = new Button("+ Add Floor");
+        addFloorBtn.setMaxWidth(Double.MAX_VALUE);
+        addFloorBtn.setStyle("-fx-background-color: #00b894; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        floorListContainer.getChildren().addAll(floorListTitle, floorListView, newFloorField, addFloorBtn);
 
         // Spot Management Table
         VBox spotContainer = new VBox(20);
@@ -49,13 +57,10 @@ public class FloorManagerTab {
         spotTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #b2bec3;");
 
         TableView<ParkingSpot> spotTable = new TableView<>();
-        
         TableColumn<ParkingSpot, String> numCol = new TableColumn<>("Spot ID");
         numCol.setCellValueFactory(new PropertyValueFactory<>("number"));
-        
         TableColumn<ParkingSpot, String> typeCol = new TableColumn<>("Category");
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-        
         TableColumn<ParkingSpot, Boolean> statusCol = new TableColumn<>("Availability");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("free"));
 
@@ -64,7 +69,23 @@ public class FloorManagerTab {
         spotTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         VBox.setVgrow(spotTable, Priority.ALWAYS);
 
-        spotContainer.getChildren().addAll(spotTitle, spotTable);
+        // Spot creation controls
+        HBox spotControls = new HBox(10);
+        spotControls.setAlignment(Pos.CENTER_LEFT);
+        TextField spotNumField = new TextField();
+        spotNumField.setPromptText("Spot ID");
+        spotNumField.setPrefWidth(100);
+
+        ComboBox<ParkingSpotType> typeCombo = new ComboBox<>();
+        typeCombo.getItems().setAll(ParkingSpotType.values());
+        typeCombo.setValue(ParkingSpotType.COMPACT);
+
+        Button addSpotBtn = new Button("Add Spot");
+        addSpotBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        spotControls.getChildren().addAll(spotNumField, typeCombo, addSpotBtn);
+
+        spotContainer.getChildren().addAll(spotTitle, spotTable, spotControls);
 
         splitPane.getItems().addAll(floorListContainer, spotContainer);
         splitPane.setDividerPositions(0.3);
