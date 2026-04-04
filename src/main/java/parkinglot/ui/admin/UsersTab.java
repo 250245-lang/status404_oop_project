@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import parkinglot.constants.AccountStatus;
 import parkinglot.managers.AppContext;
 
 public class UsersTab {
@@ -36,18 +37,53 @@ public class UsersTab {
 
         ListView<String> listView = new ListView<>();
         VBox.setVgrow(listView, Priority.ALWAYS);
-        listContainer.getChildren().addAll(listTitle, listView);
+        
+        Button addNewBtn = new Button("+ Add New User");
+        addNewBtn.setMaxWidth(Double.MAX_VALUE);
+        addNewBtn.setStyle("-fx-background-color: #00b894; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        listContainer.getChildren().addAll(listTitle, listView, addNewBtn);
 
         // User Detail View
         VBox detailContainer = new VBox(20);
         detailContainer.setPadding(new Insets(25));
         detailContainer.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
-        detailContainer.getChildren().add(new Label("Select a user to view details"));
+
+        Label detailTitle = new Label("User Details");
+        detailTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 18px;");
+
+        GridPane form = new GridPane();
+        form.setHgap(15);
+        form.setVgap(15);
+
+        TextField usernameField = new TextField();
+        ComboBox<String> roleCombo = new ComboBox<>();
+        roleCombo.getItems().setAll("ADMIN", "ATTENDANT");
+        ComboBox<AccountStatus> statusCombo = new ComboBox<>();
+        statusCombo.getItems().setAll(AccountStatus.values());
+
+        addFormField(form, "Username:", usernameField, 0);
+        addFormField(form, "Role:", roleCombo, 1);
+        addFormField(form, "Status:", statusCombo, 2);
+
+        Button saveBtn = new Button("Save Changes");
+        saveBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        detailContainer.getChildren().addAll(detailTitle, new Separator(), form, saveBtn);
 
         splitPane.getItems().addAll(listContainer, detailContainer);
         splitPane.setDividerPositions(0.35);
 
         container.getChildren().addAll(title, splitPane);
         return container;
+    }
+
+    private void addFormField(GridPane grid, String label, Node field, int row) {
+        grid.add(new Label(label), 0, row);
+        grid.add(field, 1, row);
+        if (field instanceof Region) {
+            ((Region) field).setMaxWidth(Double.MAX_VALUE);
+            GridPane.setHgrow(field, Priority.ALWAYS);
+        }
     }
 }
