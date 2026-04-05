@@ -14,6 +14,9 @@ import parkinglot.server.repository.ParkingLotRepository;
 import parkinglot.server.repository.VehicleRepository;
 import parkinglot.payment.CreditCardTransaction;
 
+/**
+ * Controller handling parking entry, exit, and fee payment.
+ */
 @RestController
 @RequestMapping("/api/parking")
 @CrossOrigin
