@@ -6,6 +6,10 @@ import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
+/**
+ * Abstract Base Class for all Payment Transactions.
+ * Supports Jackson polymorphism for API serialization.
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value = CashTransaction.class, name = "CASH"),
