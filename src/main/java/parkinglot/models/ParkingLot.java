@@ -100,6 +100,12 @@ public class ParkingLot {
         return true;
     }
 
+    public double calculateFee(ParkingTicket ticket) {
+        if (ticket == null || parkingRate == null) return 0.0;
+        long duration = java.time.Duration.between(ticket.getIssuedAt(), java.time.LocalDateTime.now()).toMinutes();
+        return parkingRate.calculateFee(duration);
+    }
+
     public ParkingTicket findTicket(String ticketNumber) {
         return allTickets.stream()
                 .filter(t -> t.getTicketNumber().equals(ticketNumber))
