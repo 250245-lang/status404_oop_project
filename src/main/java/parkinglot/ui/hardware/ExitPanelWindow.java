@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import parkinglot.managers.AppContext;
@@ -42,8 +43,26 @@ public class ExitPanelWindow {
         scanBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
         scanBtn.setDisable(true);
 
+        // Payment Box
+        VBox paymentBox = new VBox(15);
+        paymentBox.setAlignment(Pos.CENTER);
+        paymentBox.setStyle("-fx-background-color: #353b48; -fx-padding: 15; -fx-background-radius: 8;");
+        paymentBox.setDisable(true);
+        
         Label feeLabel = new Label("Amount Due: $0.00");
         feeLabel.setStyle("-fx-text-fill: #fdcb6e; -fx-font-size: 18px; -fx-font-weight: bold;");
+
+        TextField ccField = new TextField();
+        ccField.setPromptText("Card Number");
+        
+        HBox ccDetails = new HBox(10, new TextField() {{ setPromptText("MM/YY"); setPrefWidth(80); }}, new TextField() {{ setPromptText("CVV"); setPrefWidth(60); }});
+        ccDetails.setAlignment(Pos.CENTER);
+
+        Button payBtn = new Button("PAY WITH CREDIT CARD");
+        payBtn.setMaxWidth(Double.MAX_VALUE);
+        payBtn.setStyle("-fx-background-color: #55efc4; -fx-text-fill: #2d3436; -fx-font-weight: bold;");
+
+        paymentBox.getChildren().addAll(feeLabel, ccField, ccDetails, payBtn);
 
         Button openGateBtn = new Button("OPEN GATE");
         openGateBtn.setMaxWidth(Double.MAX_VALUE);
@@ -51,7 +70,7 @@ public class ExitPanelWindow {
         openGateBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
         openGateBtn.setDisable(true);
 
-        root.getChildren().addAll(title, statusLabel, ticketField, scanBtn, new Separator(), feeLabel, openGateBtn);
+        root.getChildren().addAll(title, statusLabel, ticketField, scanBtn, new Separator(), paymentBox, openGateBtn);
 
         stage.setScene(new javafx.scene.Scene(root, 400, 550));
         stage.show();
