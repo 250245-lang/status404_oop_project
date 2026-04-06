@@ -61,8 +61,7 @@ public class ParkingController extends BaseController {
         ParkingTicket ticket = lot.findTicket(ticketNumber);
         if (ticket == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Ticket not found");
 
-        long mockHours = ticket.getParkingDurationMinutes() + 1;
-        double fee = lot.getParkingRate().calculateFee(mockHours * 60);
+        double fee = lot.calculateFee(ticket);
         return success(fee);
     }
 
@@ -73,8 +72,7 @@ public class ParkingController extends BaseController {
         if (ticket == null) return error("Ticket not found", HttpStatus.NOT_FOUND);
         if (ticket.isPaid()) return error("Already paid", HttpStatus.BAD_REQUEST);
 
-        long mockHours = ticket.getParkingDurationMinutes() + 1;
-        double correctFee = lot.getParkingRate().calculateFee(mockHours * 60);
+        double correctFee = lot.calculateFee(ticket);
 
         if (method.equalsIgnoreCase("CASH")) {
             if (amount < correctFee) return error("Insufficient amount", HttpStatus.BAD_REQUEST);
