@@ -25,6 +25,13 @@ public class AdminWindow {
         tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, rateTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
+        // Sync logic: Refresh data when switching tabs
+        tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if (newTab != null) {
+                new Thread(() -> appContext.apiManager.syncData()).start();
+            }
+        });
+
         TopBar topBar = new TopBar(appContext, "Admin Management Portal");
 
         BorderPane root = new BorderPane();
