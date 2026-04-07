@@ -20,8 +20,9 @@ public class AdminWindow {
         Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
         Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext).getContent());
         Tab userTab = new Tab("Users", new UsersTab(appContext).getContent());
+        Tab rateTab = new Tab("Rates", new RatesTab(appContext).getContent());
 
-        tabPane.getTabs().addAll(dashboardTab, floorTab, userTab);
+        tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, rateTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         TopBar topBar = new TopBar(appContext, "Admin Management Portal");
