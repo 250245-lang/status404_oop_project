@@ -1,6 +1,7 @@
 package parkinglot.ui.admin;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -23,8 +24,22 @@ public class TicketsTab {
         Label title = new Label("Parking Tickets Management");
         title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        CheckBox activeOnly = new CheckBox("Show Active Tickets Only");
-        activeOnly.setSelected(true);
+        // Search and Filters
+        HBox filterBar = new HBox(15);
+        filterBar.setAlignment(Pos.CENTER_LEFT);
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search by Ticket or License...");
+        searchField.setPrefWidth(250);
+
+        ComboBox<String> statusFilter = new ComboBox<>();
+        statusFilter.getItems().setAll("ALL STATUSES", "ACTIVE", "PAID", "COMPLETED");
+        statusFilter.setValue("ALL STATUSES");
+
+        CheckBox activeOnly = new CheckBox("Active Only");
+        activeOnly.setSelected(false);
+
+        filterBar.getChildren().addAll(new Label("Filter:"), searchField, statusFilter, activeOnly);
 
         VBox tableContainer = new VBox(15);
         tableContainer.setPadding(new Insets(20));
@@ -47,7 +62,7 @@ public class TicketsTab {
         VBox.setVgrow(ticketTable, Priority.ALWAYS);
 
         tableContainer.getChildren().add(ticketTable);
-        root.getChildren().addAll(title, activeOnly, tableContainer);
+        root.getChildren().addAll(title, filterBar, tableContainer);
 
         return root;
     }
