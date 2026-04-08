@@ -21,8 +21,9 @@ public class AdminWindow {
         Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext).getContent());
         Tab userTab = new Tab("Users", new UsersTab(appContext).getContent());
         Tab rateTab = new Tab("Rates", new RatesTab(appContext).getContent());
+        Tab ticketsTab = new Tab("Tickets", new TicketsTab(appContext).getContent());
 
-        tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, rateTab);
+        tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, rateTab, ticketsTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
         // Sync logic: Refresh data when switching tabs
