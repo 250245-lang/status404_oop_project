@@ -61,8 +61,22 @@ public class FloorManagerTab {
         numCol.setCellValueFactory(new PropertyValueFactory<>("number"));
         TableColumn<ParkingSpot, String> typeCol = new TableColumn<>("Category");
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
+        
         TableColumn<ParkingSpot, Boolean> statusCol = new TableColumn<>("Availability");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("free"));
+        statusCol.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item ? "AVAILABLE" : "OCCUPIED");
+                    setStyle("-fx-font-weight: bold; -fx-text-fill: " + (item ? "#27ae60" : "#e17055") + ";");
+                }
+            }
+        });
 
         spotTable.getColumns().addAll(numCol, typeCol, statusCol);
         spotTable.setPlaceholder(new Label("Select a floor from the left to manage its spots"));
