@@ -66,10 +66,16 @@ public class UsersTab {
         addFormField(form, "Role:", roleCombo, 1);
         addFormField(form, "Status:", statusCombo, 2);
 
+        HBox actions = new HBox(15);
         Button saveBtn = new Button("Save Changes");
         saveBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+        
+        Button toggleStatusBtn = new Button("Block User");
+        toggleStatusBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
 
-        detailContainer.getChildren().addAll(detailTitle, new Separator(), form, saveBtn);
+        actions.getChildren().addAll(saveBtn, toggleStatusBtn);
+
+        detailContainer.getChildren().addAll(detailTitle, new Separator(), form, actions);
 
         splitPane.getItems().addAll(listContainer, detailContainer);
         splitPane.setDividerPositions(0.35);
