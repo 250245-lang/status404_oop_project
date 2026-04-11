@@ -70,6 +70,23 @@ public class ExitPanelWindow {
         openGateBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
         openGateBtn.setDisable(true);
 
+        // Logic for Gate Open and Reset
+        openGateBtn.setOnAction(e -> {
+            statusLabel.setText("Gate Opening... Goodbye!");
+            statusLabel.setStyle("-fx-text-fill: #fdcb6e;");
+            openGateBtn.setDisable(true);
+            
+            new Thread(() -> {
+                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
+                Platform.runLater(() -> {
+                    ticketField.clear();
+                    statusLabel.setText("System Ready. Please scan ticket.");
+                    statusLabel.setStyle("-fx-text-fill: #00b894;");
+                    paymentBox.setDisable(true);
+                });
+            }).start();
+        });
+
         root.getChildren().addAll(title, statusLabel, ticketField, scanBtn, new Separator(), paymentBox, openGateBtn);
 
         stage.setScene(new javafx.scene.Scene(root, 400, 550));
