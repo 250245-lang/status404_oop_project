@@ -70,12 +70,38 @@ public class ExitPanelWindow {
         openGateBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
         openGateBtn.setDisable(true);
 
+        // Scan Logic with API connection
+        scanBtn.setOnAction(e -> {
+            String ticketNo = ticketField.getText().trim();
+            if (ticketNo.isEmpty()) return;
+
+            statusLabel.setText("Scanning...");
+            scanBtn.setDisable(true);
+
+            new Thread(() -> {
+                try {
+                    double fee = appContext.apiManager.calculateFee(ticketNo);
+                    Platform.runLater(() -> {
+                        statusLabel.setText("Scan Complete. Fee calculated.");
+                        feeLabel.setText(String.format("Amount Due: $%.2f", fee));
+                        paymentBox.setDisable(false);
+                        scanBtn.setDisable(false);
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        statusLabel.setText("Error: Invalid ticket.");
+                        statusLabel.setStyle("-fx-text-fill: #d63031;");
+                        scanBtn.setDisable(false);
+                    });
+                }
+            }).start();
+        });
+
         // Logic for Gate Open and Reset
         openGateBtn.setOnAction(e -> {
             statusLabel.setText("Gate Opening... Goodbye!");
             statusLabel.setStyle("-fx-text-fill: #fdcb6e;");
             openGateBtn.setDisable(true);
-            
             new Thread(() -> {
                 try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
                 Platform.runLater(() -> {
