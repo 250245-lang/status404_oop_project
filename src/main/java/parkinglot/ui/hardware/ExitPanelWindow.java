@@ -12,6 +12,7 @@ import parkinglot.managers.AppContext;
 public class ExitPanelWindow {
     private final AppContext appContext;
     private final Stage stage;
+    private String currentTicketNo;
 
     public ExitPanelWindow(AppContext appContext) {
         this.appContext = appContext;
@@ -70,19 +71,18 @@ public class ExitPanelWindow {
         openGateBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
         openGateBtn.setDisable(true);
 
-        // Scan Logic with API connection
+        // Logic
         scanBtn.setOnAction(e -> {
             String ticketNo = ticketField.getText().trim();
             if (ticketNo.isEmpty()) return;
-
+            currentTicketNo = ticketNo;
             statusLabel.setText("Scanning...");
             scanBtn.setDisable(true);
-
             new Thread(() -> {
                 try {
                     double fee = appContext.apiManager.calculateFee(ticketNo);
                     Platform.runLater(() -> {
-                        statusLabel.setText("Scan Complete. Fee calculated.");
+                        statusLabel.setText("Scan Complete. Fee: $" + fee);
                         feeLabel.setText(String.format("Amount Due: $%.2f", fee));
                         paymentBox.setDisable(false);
                         scanBtn.setDisable(false);
@@ -90,26 +90,48 @@ public class ExitPanelWindow {
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
                         statusLabel.setText("Error: Invalid ticket.");
-                        statusLabel.setStyle("-fx-text-fill: #d63031;");
                         scanBtn.setDisable(false);
                     });
                 }
             }).start();
         });
 
-        // Logic for Gate Open and Reset
+        payBtn.setOnAction(e -> {
+            paymentBox.setDisable(true);
+            statusLabel.setText("Processing Payment...");
+            new Thread(() -> {
+                try {
+                    double fee = appContext.apiManager.calculateFee(currentTicketNo);
+                    String res = appContext.apiManager.payTicket(currentTicketNo, fee, "CREDIT");
+                    Platform.runLater(() -> {
+                        statusLabel.setText("Payment Success!");
+                        statusLabel.setStyle("-fx-text-fill: #00b894;");
+                        openGateBtn.setDisable(false);
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> {
+                        statusLabel.setText("Payment Failed.");
+                        paymentBox.setDisable(false);
+                    });
+                }
+            }).start();
+        });
+
         openGateBtn.setOnAction(e -> {
-            statusLabel.setText("Gate Opening... Goodbye!");
-            statusLabel.setStyle("-fx-text-fill: #fdcb6e;");
+            statusLabel.setText("Opening gate...");
             openGateBtn.setDisable(true);
             new Thread(() -> {
-                try { Thread.sleep(2000); } catch (InterruptedException ignored) {}
-                Platform.runLater(() -> {
-                    ticketField.clear();
-                    statusLabel.setText("System Ready. Please scan ticket.");
-                    statusLabel.setStyle("-fx-text-fill: #00b894;");
-                    paymentBox.setDisable(true);
-                });
+                try {
+                    appContext.apiManager.exitVehicle(currentTicketNo);
+                    Platform.runLater(() -> {
+                        ticketField.clear();
+                        statusLabel.setText("System Ready.");
+                        paymentBox.setDisable(true);
+                        currentTicketNo = null;
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> statusLabel.setText("Exit Failed."));
+                }
             }).start();
         });
 
