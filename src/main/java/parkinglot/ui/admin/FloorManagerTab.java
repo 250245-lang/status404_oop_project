@@ -96,8 +96,30 @@ public class FloorManagerTab {
 
         Button addSpotBtn = new Button("Add Spot");
         addSpotBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+        
+        Button deleteSpotBtn = new Button("Delete Spot");
+        deleteSpotBtn.setStyle("-fx-background-color: #636e72; -fx-text-fill: white; -fx-font-weight: bold;");
+        deleteSpotBtn.setOnAction(e -> {
+            String floor = floorListView.getSelectionModel().getSelectedItem();
+            ParkingSpot spot = spotTable.getSelectionModel().getSelectedItem();
+            if (floor != null && spot != null) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete spot: " + spot.getNumber() + "?", ButtonType.YES, ButtonType.NO);
+                alert.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.YES) {
+                        new Thread(() -> {
+                            try {
+                                appContext.apiManager.deleteSpot(floor, spot.getNumber());
+                                javafx.application.Platform.runLater(() -> appContext.apiManager.syncData());
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }).start();
+                    }
+                });
+            }
+        });
 
-        spotControls.getChildren().addAll(spotNumField, typeCombo, addSpotBtn);
+        spotControls.getChildren().addAll(spotNumField, typeCombo, addSpotBtn, deleteSpotBtn);
 
         spotContainer.getChildren().addAll(spotTitle, spotTable, spotControls);
 
@@ -106,5 +128,14 @@ public class FloorManagerTab {
 
         root.getChildren().addAll(title, splitPane);
         return root;
+    }
+
+    private void addFormField(GridPane grid, String label, Node field, int row) {
+        grid.add(new Label(label), 0, row);
+        grid.add(field, 1, row);
+        if (field instanceof Region) {
+            ((Region) field).setMaxWidth(Double.MAX_VALUE);
+            GridPane.setHgrow(field, Priority.ALWAYS);
+        }
     }
 }
