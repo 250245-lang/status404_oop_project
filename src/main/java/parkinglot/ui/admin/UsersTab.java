@@ -73,7 +73,29 @@ public class UsersTab {
         Button toggleStatusBtn = new Button("Block User");
         toggleStatusBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
 
-        actions.getChildren().addAll(saveBtn, toggleStatusBtn);
+        Button deleteBtn = new Button("Delete Account");
+        deleteBtn.setStyle("-fx-background-color: #636e72; -fx-text-fill: white; -fx-font-weight: bold;");
+        
+        deleteBtn.setOnAction(e -> {
+            String selected = listView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete account: " + selected + "?", ButtonType.YES, ButtonType.NO);
+                alert.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.YES) {
+                        new Thread(() -> {
+                            try {
+                                appContext.apiManager.deleteAccount(selected);
+                                javafx.application.Platform.runLater(() -> appContext.apiManager.syncData());
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }).start();
+                    }
+                });
+            }
+        });
+
+        actions.getChildren().addAll(saveBtn, toggleStatusBtn, deleteBtn);
 
         detailContainer.getChildren().addAll(detailTitle, new Separator(), form, actions);
 
