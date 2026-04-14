@@ -54,6 +54,10 @@ public class APIManager {
         restTemplate.delete(serverAddress + "/api/accounts/" + username);
     }
 
+    public void deleteFloor(String floorName) {
+        restTemplate.delete(serverAddress + "/api/parking/floors/" + floorName);
+    }
+
     public void deleteSpot(String floorName, String spotNumber) {
         restTemplate.delete(serverAddress + "/api/parking/floors/" + floorName + "/spots/" + spotNumber);
     }

@@ -40,13 +40,35 @@ public class FloorManagerTab {
         ListView<String> floorListView = new ListView<>();
         VBox.setVgrow(floorListView, Priority.ALWAYS);
 
-        TextField newFloorField = new TextField();
-        newFloorField.setPromptText("New Floor Name...");
-        Button addFloorBtn = new Button("+ Add Floor");
-        addFloorBtn.setMaxWidth(Double.MAX_VALUE);
+        HBox floorActions = new HBox(10);
+        Button addFloorBtn = new Button("Add Floor");
+        addFloorBtn.setPrefWidth(100);
         addFloorBtn.setStyle("-fx-background-color: #00b894; -fx-text-fill: white; -fx-font-weight: bold;");
+        
+        Button deleteFloorBtn = new Button("Delete Floor");
+        deleteFloorBtn.setPrefWidth(100);
+        deleteFloorBtn.setStyle("-fx-background-color: #636e72; -fx-text-fill: white; -fx-font-weight: bold;");
+        deleteFloorBtn.setOnAction(e -> {
+            String selected = floorListView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete entire floor: " + selected + "?", ButtonType.YES, ButtonType.NO);
+                alert.showAndWait().ifPresent(response -> {
+                    if (response == ButtonType.YES) {
+                        new Thread(() -> {
+                            try {
+                                appContext.apiManager.deleteFloor(selected);
+                                javafx.application.Platform.runLater(() -> appContext.apiManager.syncData());
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }).start();
+                    }
+                });
+            }
+        });
 
-        floorListContainer.getChildren().addAll(floorListTitle, floorListView, newFloorField, addFloorBtn);
+        floorActions.getChildren().addAll(addFloorBtn, deleteFloorBtn);
+        floorListContainer.getChildren().addAll(floorListTitle, floorListView, floorActions);
 
         // Spot Management Table
         VBox spotContainer = new VBox(20);
@@ -128,14 +150,5 @@ public class FloorManagerTab {
 
         root.getChildren().addAll(title, splitPane);
         return root;
-    }
-
-    private void addFormField(GridPane grid, String label, Node field, int row) {
-        grid.add(new Label(label), 0, row);
-        grid.add(field, 1, row);
-        if (field instanceof Region) {
-            ((Region) field).setMaxWidth(Double.MAX_VALUE);
-            GridPane.setHgrow(field, Priority.ALWAYS);
-        }
     }
 }
