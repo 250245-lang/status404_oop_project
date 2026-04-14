@@ -27,13 +27,26 @@ public class DashboardTab {
     private void setupDataBinding() {
         appContext.parkingLotProperty().addListener((obs, oldLot, newLot) -> {
             if (newLot != null) {
-                Platform.runLater(() -> updateStats(newLot));
+                Platform.runLater(() -> {
+                    updateStats(newLot);
+                    fetchStaffCount();
+                });
             }
         });
         
         if (appContext.getParkingLot() != null) {
             updateStats(appContext.getParkingLot());
+            fetchStaffCount();
         }
+    }
+
+    private void fetchStaffCount() {
+        new Thread(() -> {
+            try {
+                int count = appContext.apiManager.getAccounts().size();
+                Platform.runLater(() -> staffLabel.setText(String.valueOf(count)));
+            } catch (Exception ignored) {}
+        }).start();
     }
 
     private void updateStats(ParkingLot lot) {
@@ -46,7 +59,6 @@ public class DashboardTab {
         double percent = totalSpots > 0 ? (occupiedSpots * 100.0 / totalSpots) : 0;
         occupancyLabel.setText(String.format("%.1f%%", percent));
         ticketLabel.setText(String.valueOf(lot.getAllTickets().size()));
-        staffLabel.setText("N/A");
 
         floorContainer.getChildren().clear();
         for (ParkingFloor floor : lot.getFloors()) {
@@ -73,8 +85,6 @@ public class DashboardTab {
         VBox bottomSection = new VBox(15);
         Label floorTitle = new Label("FLOOR UTILIZATION");
         floorTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #b2bec3; -fx-font-size: 11px;");
-        
-        floorContainer.setPadding(new Insets(5, 0, 0, 0));
         bottomSection.getChildren().addAll(floorTitle, floorContainer);
 
         root.getChildren().addAll(welcome, statCards, bottomSection);
@@ -102,17 +112,13 @@ public class DashboardTab {
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(15, 20, 15, 20));
         row.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
-
         Label name = new Label(floor.getName());
         name.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
         name.setPrefWidth(150);
-
         int total = floor.getSpots().size();
         int free = (int) floor.getSpots().stream().filter(s -> s.isFree()).count();
-        
         Label status = new Label(String.format("%d / %d Spots Available", free, total));
         status.setStyle("-fx-text-fill: #636e72;");
-
         row.getChildren().addAll(name, status);
         return row;
     }

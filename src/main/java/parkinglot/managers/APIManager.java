@@ -2,17 +2,26 @@ package parkinglot.managers;
 
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import parkinglot.models.ParkingLot;
+import parkinglot.models.ParkingRate;
 import parkinglot.users.Account;
 import parkinglot.utils.LoginResponse;
+import java.util.Arrays;
+import java.util.List;
 
 public class APIManager {
     private String authToken = null;
     private ServerAddress serverAddress;
     private final RestTemplate restTemplate = new RestTemplate();
+    private AppContext appContext;
 
     public APIManager(){
         this.serverAddress = new ServerAddress("127.0.0.1", 8080);
         setupInterceptors();
+    }
+
+    public void setAppContext(AppContext context) {
+        this.appContext = context;
     }
 
     private void setupInterceptors() {
@@ -24,47 +33,69 @@ public class APIManager {
         });
     }
 
-    public void setServerAddress(String ip, int port){
-        serverAddress = new ServerAddress(ip, port);
+    public void syncData() {
+        if (appContext == null) return;
+        try {
+            ParkingLot lot = restTemplate.getForObject(serverAddress + "/api/parking/status", ParkingLot.class);
+            if (lot != null) {
+                javafx.application.Platform.runLater(() -> appContext.setParkingLot(lot));
+            }
+        } catch (Exception e) {
+            System.err.println("Sync failed: " + e.getMessage());
+        }
     }
 
-    public void setServerIp(String ip){
-        setServerAddress(ip, serverAddress.port);
-    }
-    public void setServerPort(int port){
-        setServerAddress(serverAddress.ip, port);
+    public List<Account> getAccounts() {
+        Account[] accounts = restTemplate.getForObject(serverAddress + "/api/accounts", Account[].class);
+        return accounts != null ? Arrays.asList(accounts) : List.of();
     }
 
-    public ServerAddress getServerAddress() {return serverAddress;}
-
-    public void clearToken(){
-        this.authToken = null;
+    public void deleteAccount(String username) {
+        restTemplate.delete(serverAddress + "/api/accounts/" + username);
     }
 
-    public boolean isLoggedIn() {
-        return authToken != null && !authToken.isEmpty();
+    public void deleteSpot(String floorName, String spotNumber) {
+        restTemplate.delete(serverAddress + "/api/parking/floors/" + floorName + "/spots/" + spotNumber);
     }
 
-    public String checkHealth() {
-        return restTemplate.getForObject(serverAddress + "/health", String.class);
+    public void updateRates(ParkingRate rates) {
+        restTemplate.postForObject(serverAddress + "/api/parking/rates", rates, Void.class);
     }
 
-    public Account login(String username, String password, boolean rememberMe) throws Exception{
+    public double calculateFee(String ticketNumber) {
+        return restTemplate.getForObject(serverAddress + "/api/parking/calculate-fee/" + ticketNumber, Double.class);
+    }
+
+    public String payTicket(String ticketNumber, double amount, String method) {
+        String url = UriComponentsBuilder.fromUriString(serverAddress + "/api/parking/pay")
+                .queryParam("ticketNumber", ticketNumber)
+                .queryParam("amount", amount)
+                .queryParam("method", method)
+                .toUriString();
+        return restTemplate.postForObject(url, null, String.class);
+    }
+
+    public void exitVehicle(String ticketNumber) {
+        String url = UriComponentsBuilder.fromUriString(serverAddress + "/api/parking/exit")
+                .queryParam("ticketNumber", ticketNumber)
+                .toUriString();
+        restTemplate.postForObject(url, null, String.class);
+    }
+
+    public Account login(String username, String password, boolean rememberMe) throws Exception {
         String url = UriComponentsBuilder.fromUriString(serverAddress + "/api/accounts/login")
                 .queryParam("user", username)
                 .queryParam("pass", password)
                 .toUriString();
-
-        try {
-            LoginResponse response = restTemplate.postForObject(url, null, LoginResponse.class);
-            if (response != null) {
-                this.authToken = response.token();
-                return response.user();
-            }
-            return null;
-        } catch (Exception e) {
-            System.err.println("Connection error: " + e.getMessage());
-            throw e;
+        LoginResponse response = restTemplate.postForObject(url, null, LoginResponse.class);
+        if (response != null) {
+            this.authToken = response.token();
+            return response.user();
         }
+        return null;
     }
+
+    public void clearToken(){ this.authToken = null; }
+    public boolean isLoggedIn() { return authToken != null && !authToken.isEmpty(); }
+    public String checkHealth() { return restTemplate.getForObject(serverAddress + "/health", String.class); }
 }
