@@ -54,6 +54,13 @@ public class APIManager {
         restTemplate.delete(serverAddress + "/api/accounts/" + username);
     }
 
+    public void updatePassword(String username, String newPassword) {
+        String url = UriComponentsBuilder.fromUriString(serverAddress + "/api/accounts/" + username + "/password")
+                .queryParam("pass", newPassword)
+                .toUriString();
+        restTemplate.postForObject(url, null, Void.class);
+    }
+
     public void deleteFloor(String floorName) {
         restTemplate.delete(serverAddress + "/api/parking/floors/" + floorName);
     }

@@ -70,6 +70,33 @@ public class UsersTab {
         Button saveBtn = new Button("Save Changes");
         saveBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
         
+        Button changePasswordBtn = new Button("Reset Password");
+        changePasswordBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold;");
+        changePasswordBtn.setOnAction(e -> {
+            String selected = listView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                TextInputDialog dialog = new TextInputDialog();
+                dialog.setTitle("Reset Password");
+                dialog.setHeaderText("Reset password for: " + selected);
+                dialog.setContentText("Enter new password:");
+                dialog.showAndWait().ifPresent(pass -> {
+                    if (!pass.trim().isEmpty()) {
+                        new Thread(() -> {
+                            try {
+                                appContext.apiManager.updatePassword(selected, pass);
+                                javafx.application.Platform.runLater(() -> {
+                                    Alert info = new Alert(Alert.AlertType.INFORMATION, "Password updated successfully.");
+                                    info.show();
+                                });
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }).start();
+                    }
+                });
+            }
+        });
+
         Button toggleStatusBtn = new Button("Block User");
         toggleStatusBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
 
@@ -95,7 +122,7 @@ public class UsersTab {
             }
         });
 
-        actions.getChildren().addAll(saveBtn, toggleStatusBtn, deleteBtn);
+        actions.getChildren().addAll(saveBtn, changePasswordBtn, toggleStatusBtn, deleteBtn);
 
         detailContainer.getChildren().addAll(detailTitle, new Separator(), form, actions);
 
