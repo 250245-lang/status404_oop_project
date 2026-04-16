@@ -61,9 +61,38 @@ public class TicketsTab {
         ticketTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         VBox.setVgrow(ticketTable, Priority.ALWAYS);
 
+        // Details Popup Logic
+        ticketTable.setRowFactory(tv -> {
+            TableRow<ParkingTicket> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    showTicketDetails(row.getItem());
+                }
+            });
+            return row;
+        });
+
         tableContainer.getChildren().add(ticketTable);
         root.getChildren().addAll(title, filterBar, tableContainer);
 
         return root;
+    }
+
+    private void showTicketDetails(ParkingTicket ticket) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Ticket Details");
+        alert.setHeaderText("Information for Ticket: " + ticket.getTicketNumber());
+        
+        StringBuilder details = new StringBuilder();
+        details.append("Vehicle License: ").append(ticket.getVehicleLicense()).append("\n");
+        details.append("Spot Number: ").append(ticket.getSpotNumber()).append("\n");
+        details.append("Status: ").append(ticket.getStatus()).append("\n");
+        details.append("Issued At: ").append(ticket.getIssuedAt()).append("\n");
+        if (ticket.getPayedAmount() > 0) {
+            details.append("Paid Amount: $").append(String.format("%.2f", ticket.getPayedAmount())).append("\n");
+        }
+
+        alert.setContentText(details.toString());
+        alert.show();
     }
 }
