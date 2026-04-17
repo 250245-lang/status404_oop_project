@@ -1,5 +1,6 @@
 package parkinglot.ui.hardware;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -7,11 +8,16 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import parkinglot.managers.AppContext;
+import parkinglot.models.ParkingLot;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ParkingDisplayBoard {
     private final AppContext appContext;
     private final String floorName;
     private final Stage stage;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     public ParkingDisplayBoard(AppContext appContext, String floorName) {
         this.appContext = appContext;
@@ -56,6 +62,25 @@ public class ParkingDisplayBoard {
         root.setCenter(spotGrid);
 
         stage.setScene(new Scene(root, 800, 600));
+        stage.setOnCloseRequest(e -> scheduler.shutdownNow());
         stage.show();
+
+        // Start Periodic Refresh
+        scheduler.scheduleAtFixedRate(() -> {
+            try {
+                // In a real scenario, we'd fetch the specific lot status
+                // For this simulation, we trigger the global sync
+                appContext.apiManager.syncData();
+                Platform.runLater(() -> {
+                    ParkingLot lot = appContext.getParkingLot();
+                    if (lot != null) {
+                        // Update labels based on synced lot data
+                        // (Full grid rebuild logic will be added in #71)
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("Refresh failed: " + e.getMessage());
+            }
+        }, 0, 5, TimeUnit.SECONDS);
     }
 }
