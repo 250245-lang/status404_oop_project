@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import parkinglot.constants.ParkingSpotType;
@@ -26,6 +27,7 @@ public class ParkingDisplayBoard {
     private final HBox summaryRow = new HBox(20);
     private final Label availLabel = new Label("-- Available");
     private final Label occupiedLabel = new Label("-- Occupied");
+    private final FlowPane spotGrid = new FlowPane();
 
     public ParkingDisplayBoard(AppContext appContext, String floorName) {
         this.appContext = appContext;
@@ -61,16 +63,19 @@ public class ParkingDisplayBoard {
         header.getChildren().addAll(titleLabel, floorLabel, statsRow, summaryRow);
 
         // --- Spot Grid ---
-        FlowPane spotGrid = new FlowPane();
         spotGrid.setHgap(15);
         spotGrid.setVgap(15);
         spotGrid.setPadding(new Insets(30));
         spotGrid.setStyle("-fx-background-color: #0a0a0a;");
 
-        root.setTop(header);
-        root.setCenter(spotGrid);
+        ScrollPane scroll = new ScrollPane(spotGrid);
+        scroll.setStyle("-fx-background: #0a0a0a; -fx-background-color: #0a0a0a;");
+        scroll.setFitToWidth(true);
 
-        stage.setScene(new Scene(root, 800, 600));
+        root.setTop(header);
+        root.setCenter(scroll);
+
+        stage.setScene(new Scene(root, 850, 650));
         stage.setOnCloseRequest(e -> scheduler.shutdownNow());
         stage.show();
 
@@ -84,6 +89,7 @@ public class ParkingDisplayBoard {
                         ParkingFloor floor = lot.getFloors().stream().filter(f -> f.getName().equals(floorName)).findFirst().orElse(null);
                         if (floor != null) {
                             updateSummary(floor.getSpots());
+                            rebuildGrid(floor.getSpots());
                         }
                     }
                 });
@@ -103,20 +109,43 @@ public class ParkingDisplayBoard {
 
         for (ParkingSpotType type : ParkingSpotType.values()) {
             long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
-            
             VBox box = new VBox(2);
             box.setAlignment(Pos.CENTER);
             box.setPadding(new Insets(5, 10, 5, 10));
             box.setStyle("-fx-background-color: #1a1a1a; -fx-background-radius: 5;");
-            
             Label typeLbl = new Label(type.toString());
             typeLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #b2bec3;");
-            
             Label countLbl = new Label(String.valueOf(freeOfType));
             countLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #81ecec;");
-            
             box.getChildren().addAll(typeLbl, countLbl);
             summaryRow.getChildren().add(box);
         }
+    }
+
+    private void rebuildGrid(List<ParkingSpot> spots) {
+        spotGrid.getChildren().clear();
+        for (ParkingSpot spot : spots) {
+            spotGrid.getChildren().add(buildSpotCard(spot));
+        }
+    }
+
+    private VBox buildSpotCard(ParkingSpot spot) {
+        VBox card = new VBox(6);
+        card.setAlignment(Pos.CENTER);
+        card.setPrefSize(120, 90);
+        card.setPadding(new Insets(10));
+
+        boolean free = spot.isFree();
+        String color = free ? "#00b894" : "#d63031";
+        card.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: " + color + "; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        Label num = new Label(spot.getNumber());
+        num.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+
+        Label status = new Label(free ? "FREE" : "OCCUPIED");
+        status.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+        card.getChildren().addAll(num, status);
+        return card;
     }
 }
