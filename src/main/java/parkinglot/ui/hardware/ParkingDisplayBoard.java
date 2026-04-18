@@ -7,8 +7,12 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import parkinglot.constants.ParkingSpotType;
 import parkinglot.managers.AppContext;
+import parkinglot.models.ParkingFloor;
 import parkinglot.models.ParkingLot;
+import parkinglot.models.spots.ParkingSpot;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -18,6 +22,10 @@ public class ParkingDisplayBoard {
     private final String floorName;
     private final Stage stage;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    private final HBox summaryRow = new HBox(20);
+    private final Label availLabel = new Label("-- Available");
+    private final Label occupiedLabel = new Label("-- Occupied");
 
     public ParkingDisplayBoard(AppContext appContext, String floorName) {
         this.appContext = appContext;
@@ -43,13 +51,14 @@ public class ParkingDisplayBoard {
         floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #dfe6e9;");
 
         HBox statsRow = new HBox(40);
-        Label availLabel = new Label("-- Available");
         availLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #00b894;");
-        Label occupiedLabel = new Label("-- Occupied");
         occupiedLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #d63031;");
-        
         statsRow.getChildren().addAll(availLabel, occupiedLabel);
-        header.getChildren().addAll(titleLabel, floorLabel, statsRow);
+
+        summaryRow.setPadding(new Insets(10, 0, 0, 0));
+        summaryRow.setAlignment(Pos.CENTER_LEFT);
+
+        header.getChildren().addAll(titleLabel, floorLabel, statsRow, summaryRow);
 
         // --- Spot Grid ---
         FlowPane spotGrid = new FlowPane();
@@ -68,19 +77,46 @@ public class ParkingDisplayBoard {
         // Start Periodic Refresh
         scheduler.scheduleAtFixedRate(() -> {
             try {
-                // In a real scenario, we'd fetch the specific lot status
-                // For this simulation, we trigger the global sync
                 appContext.apiManager.syncData();
                 Platform.runLater(() -> {
                     ParkingLot lot = appContext.getParkingLot();
                     if (lot != null) {
-                        // Update labels based on synced lot data
-                        // (Full grid rebuild logic will be added in #71)
+                        ParkingFloor floor = lot.getFloors().stream().filter(f -> f.getName().equals(floorName)).findFirst().orElse(null);
+                        if (floor != null) {
+                            updateSummary(floor.getSpots());
+                        }
                     }
                 });
             } catch (Exception e) {
                 System.err.println("Refresh failed: " + e.getMessage());
             }
         }, 0, 5, TimeUnit.SECONDS);
+    }
+
+    private void updateSummary(List<ParkingSpot> spots) {
+        summaryRow.getChildren().clear();
+        int totalFree = (int) spots.stream().filter(ParkingSpot::isFree).count();
+        int totalOccupied = spots.size() - totalFree;
+
+        availLabel.setText(totalFree + " Available");
+        occupiedLabel.setText(totalOccupied + " Occupied");
+
+        for (ParkingSpotType type : ParkingSpotType.values()) {
+            long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
+            
+            VBox box = new VBox(2);
+            box.setAlignment(Pos.CENTER);
+            box.setPadding(new Insets(5, 10, 5, 10));
+            box.setStyle("-fx-background-color: #1a1a1a; -fx-background-radius: 5;");
+            
+            Label typeLbl = new Label(type.toString());
+            typeLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #b2bec3;");
+            
+            Label countLbl = new Label(String.valueOf(freeOfType));
+            countLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #81ecec;");
+            
+            box.getChildren().addAll(typeLbl, countLbl);
+            summaryRow.getChildren().add(box);
+        }
     }
 }
