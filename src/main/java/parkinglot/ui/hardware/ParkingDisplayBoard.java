@@ -28,6 +28,7 @@ public class ParkingDisplayBoard {
     private final Label availLabel = new Label("-- Available");
     private final Label occupiedLabel = new Label("-- Occupied");
     private final FlowPane spotGrid = new FlowPane();
+    private final Label floorLabel = new Label();
 
     public ParkingDisplayBoard(AppContext appContext, String floorName) {
         this.appContext = appContext;
@@ -49,7 +50,7 @@ public class ParkingDisplayBoard {
         Label titleLabel = new Label("PARKING DISPLAY BOARD");
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #636e72;");
 
-        Label floorLabel = new Label("Floor: " + floorName);
+        floorLabel.setText("Floor: " + floorName);
         floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #dfe6e9;");
 
         HBox statsRow = new HBox(40);
@@ -90,6 +91,16 @@ public class ParkingDisplayBoard {
                         if (floor != null) {
                             updateSummary(floor.getSpots());
                             rebuildGrid(floor.getSpots());
+                            
+                            // Lot Full Indicator
+                            boolean isLotFull = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).allMatch(s -> !s.isFree());
+                            if (isLotFull) {
+                                floorLabel.setText("Floor: " + floorName + " (LOT FULL)");
+                                floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #d63031;");
+                            } else {
+                                floorLabel.setText("Floor: " + floorName);
+                                floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #dfe6e9;");
+                            }
                         }
                     }
                 });
@@ -108,15 +119,24 @@ public class ParkingDisplayBoard {
         occupiedLabel.setText(totalOccupied + " Occupied");
 
         for (ParkingSpotType type : ParkingSpotType.values()) {
+            long totalOfType = spots.stream().filter(s -> s.getType() == type).count();
             long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
+            if (totalOfType == 0) continue;
+
             VBox box = new VBox(2);
             box.setAlignment(Pos.CENTER);
             box.setPadding(new Insets(5, 10, 5, 10));
             box.setStyle("-fx-background-color: #1a1a1a; -fx-background-radius: 5;");
+            
             Label typeLbl = new Label(type.toString());
             typeLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #b2bec3;");
-            Label countLbl = new Label(String.valueOf(freeOfType));
-            countLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #81ecec;");
+            
+            String countText = (freeOfType == 0) ? "FULL" : String.valueOf(freeOfType);
+            String countColor = (freeOfType == 0) ? "#d63031" : "#81ecec";
+
+            Label countLbl = new Label(countText);
+            countLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + countColor + ";");
+            
             box.getChildren().addAll(typeLbl, countLbl);
             summaryRow.getChildren().add(box);
         }
@@ -134,17 +154,13 @@ public class ParkingDisplayBoard {
         card.setAlignment(Pos.CENTER);
         card.setPrefSize(120, 90);
         card.setPadding(new Insets(10));
-
         boolean free = spot.isFree();
         String color = free ? "#00b894" : "#d63031";
         card.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: " + color + "; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;");
-
         Label num = new Label(spot.getNumber());
         num.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
-
         Label status = new Label(free ? "FREE" : "OCCUPIED");
         status.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: white;");
-
         card.getChildren().addAll(num, status);
         return card;
     }
