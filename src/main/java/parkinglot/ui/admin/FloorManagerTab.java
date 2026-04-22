@@ -9,6 +9,7 @@ import javafx.scene.layout.*;
 import parkinglot.constants.ParkingSpotType;
 import parkinglot.managers.AppContext;
 import parkinglot.models.spots.ParkingSpot;
+import parkinglot.ui.hardware.ParkingDisplayBoard;
 
 public class FloorManagerTab {
     private final AppContext appContext;
@@ -42,32 +43,24 @@ public class FloorManagerTab {
 
         HBox floorActions = new HBox(10);
         Button addFloorBtn = new Button("Add Floor");
-        addFloorBtn.setPrefWidth(100);
+        addFloorBtn.setPrefWidth(80);
         addFloorBtn.setStyle("-fx-background-color: #00b894; -fx-text-fill: white; -fx-font-weight: bold;");
         
         Button deleteFloorBtn = new Button("Delete Floor");
-        deleteFloorBtn.setPrefWidth(100);
+        deleteFloorBtn.setPrefWidth(90);
         deleteFloorBtn.setStyle("-fx-background-color: #636e72; -fx-text-fill: white; -fx-font-weight: bold;");
-        deleteFloorBtn.setOnAction(e -> {
+        
+        Button openDisplayBtn = new Button("Open Display");
+        openDisplayBtn.setPrefWidth(90);
+        openDisplayBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold;");
+        openDisplayBtn.setOnAction(e -> {
             String selected = floorListView.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete entire floor: " + selected + "?", ButtonType.YES, ButtonType.NO);
-                alert.showAndWait().ifPresent(response -> {
-                    if (response == ButtonType.YES) {
-                        new Thread(() -> {
-                            try {
-                                appContext.apiManager.deleteFloor(selected);
-                                javafx.application.Platform.runLater(() -> appContext.apiManager.syncData());
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        }).start();
-                    }
-                });
+                new ParkingDisplayBoard(appContext, selected).show();
             }
         });
 
-        floorActions.getChildren().addAll(addFloorBtn, deleteFloorBtn);
+        floorActions.getChildren().addAll(addFloorBtn, deleteFloorBtn, openDisplayBtn);
         floorListContainer.getChildren().addAll(floorListTitle, floorListView, floorActions);
 
         // Spot Management Table
