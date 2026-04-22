@@ -3,13 +3,15 @@ package parkinglot.ui.login_system;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.layout.*;
 import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import parkinglot.managers.AppContext;
+import parkinglot.ui.admin.AdminWindow;
 import parkinglot.users.Account;
 
 public class LoginWindow {
-
     private final AppContext appContext;
 
     public LoginWindow(AppContext appContext) {
@@ -17,20 +19,17 @@ public class LoginWindow {
     }
 
     public void show() {
-        StackPane root = new StackPane();
-        root.setPadding(new Insets(20, 40, 40, 40));
-        root.setStyle("-fx-background-color: #f4f7f6;");
+        VBox root = new VBox(25);
+        root.setPadding(new Insets(50));
+        root.setAlignment(Pos.CENTER);
+        root.setStyle("-fx-background-color: #ffffff;");
 
-        VBox mainLayout = new VBox(25);
-        mainLayout.setAlignment(Pos.CENTER);
+        Label title = new Label("Parking Management System");
+        title.setFont(Font.font("Arial", FontWeight.BOLD, 24));
+        title.setStyle("-fx-text-fill: #2d3436;");
 
-        VBox loginCard = new VBox(20);
-        loginCard.setMaxWidth(400);
-        loginCard.setPadding(new Insets(35, 40, 35, 40));
-        loginCard.setStyle("-fx-background-color: white; -fx-background-radius: 15; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 20, 0, 0, 10);");
-
-        Label loginLabel = new Label("Staff Authentication");
-        loginLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        VBox form = new VBox(15);
+        form.setMaxWidth(300);
 
         TextField usernameField = new TextField();
         usernameField.setPromptText("Username");
@@ -40,55 +39,46 @@ public class LoginWindow {
         passwordField.setPromptText("Password");
         passwordField.setPrefHeight(40);
 
-        Button loginButton = new Button("LOG IN");
-        loginButton.setMaxWidth(Double.MAX_VALUE);
-        loginButton.setPrefHeight(45);
-        loginButton.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button loginBtn = new Button("SIGN IN");
+        loginBtn.setMaxWidth(Double.MAX_VALUE);
+        loginBtn.setPrefHeight(45);
+        loginBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
 
-        loginButton.setOnAction(e -> {
-            String user = usernameField.getText().trim();
+        Label errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: #d63031;");
+
+        loginBtn.setOnAction(e -> {
+            String user = usernameField.getText();
             String pass = passwordField.getText();
-
-            if (user.isEmpty() || pass.isEmpty()) {
-                loginLabel.setText("Missing Credentials");
-                loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
-                return;
-            }
-
-            loginButton.setDisable(true);
-            loginLabel.setText("Verifying...");
-            loginLabel.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: bold; -fx-font-size: 20px;");
+            
+            loginBtn.setDisable(true);
+            errorLabel.setText("Authenticating...");
 
             new Thread(() -> {
                 try {
-                    // Actual API call via APIManager
                     Account account = appContext.apiManager.login(user, pass, false);
                     Platform.runLater(() -> {
                         if (account != null) {
                             appContext.setAccount(account);
-                            loginLabel.setText("Access Granted");
-                            loginLabel.setStyle("-fx-text-fill: #27ae60; -fx-font-weight: bold; -fx-font-size: 20px;");
-                            // Navigation logic to AdminWindow will be integrated next
+                            appContext.apiManager.syncData();
+                            new AdminWindow(appContext).show();
                         } else {
-                            loginLabel.setText("Access Denied");
-                            loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
-                            loginButton.setDisable(false);
+                            errorLabel.setText("Invalid credentials");
+                            loginBtn.setDisable(false);
                         }
                     });
                 } catch (Exception ex) {
                     Platform.runLater(() -> {
-                        loginLabel.setText("Connection Error");
-                        loginLabel.setStyle("-fx-text-fill: #d63031; -fx-font-weight: bold; -fx-font-size: 20px;");
-                        loginButton.setDisable(false);
+                        errorLabel.setText("Connection Error");
+                        loginBtn.setDisable(false);
                     });
                 }
             }).start();
         });
 
-        loginCard.getChildren().addAll(loginLabel, usernameField, passwordField, loginButton);
-        mainLayout.getChildren().add(loginCard);
-        root.getChildren().add(mainLayout);
+        form.getChildren().addAll(usernameField, passwordField, loginBtn, errorLabel);
+        root.getChildren().addAll(title, form);
 
-        appContext.resetToView(root, "Login", 635, 650, false);
+        appContext.resetToView(root, "Login - Parking Lot System", 450, 500, false);
     }
 }
