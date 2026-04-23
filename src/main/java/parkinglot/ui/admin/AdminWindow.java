@@ -15,8 +15,10 @@ public class AdminWindow {
     }
 
     public void show() {
+        // Initial data sync
+        new Thread(() -> appContext.apiManager.syncData()).start();
+
         TabPane tabPane = new TabPane();
-        
         Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
         Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext).getContent());
         Tab userTab = new Tab("Users", new UsersTab(appContext).getContent());
