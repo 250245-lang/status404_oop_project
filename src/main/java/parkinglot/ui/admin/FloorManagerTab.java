@@ -1,5 +1,6 @@
 package parkinglot.ui.admin;
 
+import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -8,6 +9,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import parkinglot.constants.ParkingSpotType;
 import parkinglot.managers.AppContext;
+import parkinglot.models.ParkingFloor;
 import parkinglot.models.spots.ParkingSpot;
 import parkinglot.ui.hardware.ParkingDisplayBoard;
 
@@ -43,22 +45,13 @@ public class FloorManagerTab {
 
         HBox floorActions = new HBox(10);
         Button addFloorBtn = new Button("Add Floor");
-        addFloorBtn.setPrefWidth(80);
         addFloorBtn.setStyle("-fx-background-color: #00b894; -fx-text-fill: white; -fx-font-weight: bold;");
         
         Button deleteFloorBtn = new Button("Delete Floor");
-        deleteFloorBtn.setPrefWidth(90);
         deleteFloorBtn.setStyle("-fx-background-color: #636e72; -fx-text-fill: white; -fx-font-weight: bold;");
         
         Button openDisplayBtn = new Button("Open Display");
-        openDisplayBtn.setPrefWidth(90);
         openDisplayBtn.setStyle("-fx-background-color: #f39c12; -fx-text-fill: white; -fx-font-weight: bold;");
-        openDisplayBtn.setOnAction(e -> {
-            String selected = floorListView.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                new ParkingDisplayBoard(appContext, selected).show();
-            }
-        });
 
         floorActions.getChildren().addAll(addFloorBtn, deleteFloorBtn, openDisplayBtn);
         floorListContainer.getChildren().addAll(floorListTitle, floorListView, floorActions);
@@ -68,79 +61,36 @@ public class FloorManagerTab {
         spotContainer.setPadding(new Insets(20));
         spotContainer.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
 
-        Label spotTitle = new Label("PARKING SPOTS CONFIGURATION");
-        spotTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #b2bec3;");
-
         TableView<ParkingSpot> spotTable = new TableView<>();
         TableColumn<ParkingSpot, String> numCol = new TableColumn<>("Spot ID");
         numCol.setCellValueFactory(new PropertyValueFactory<>("number"));
         TableColumn<ParkingSpot, String> typeCol = new TableColumn<>("Category");
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
-        
         TableColumn<ParkingSpot, Boolean> statusCol = new TableColumn<>("Availability");
         statusCol.setCellValueFactory(new PropertyValueFactory<>("free"));
-        statusCol.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(Boolean item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(item ? "AVAILABLE" : "OCCUPIED");
-                    setStyle("-fx-font-weight: bold; -fx-text-fill: " + (item ? "#27ae60" : "#e17055") + ";");
+
+        spotTable.getColumns().addAll(numCol, typeCol, statusCol);
+        VBox.setVgrow(spotTable, Priority.ALWAYS);
+
+        // Selection Listener with Null Check
+        floorListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null) {
+                spotTable.setItems(FXCollections.emptyObservableList());
+                return;
+            }
+            if (appContext.getParkingLot() != null) {
+                ParkingFloor floor = appContext.getParkingLot().getFloors().stream()
+                        .filter(f -> f.getName().equals(newVal))
+                        .findFirst()
+                        .orElse(null);
+                if (floor != null) {
+                    spotTable.setItems(FXCollections.observableArrayList(floor.getSpots()));
                 }
             }
         });
 
-        spotTable.getColumns().addAll(numCol, typeCol, statusCol);
-        spotTable.setPlaceholder(new Label("Select a floor from the left to manage its spots"));
-        spotTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        VBox.setVgrow(spotTable, Priority.ALWAYS);
-
-        // Spot creation controls
-        HBox spotControls = new HBox(10);
-        spotControls.setAlignment(Pos.CENTER_LEFT);
-        TextField spotNumField = new TextField();
-        spotNumField.setPromptText("Spot ID");
-        spotNumField.setPrefWidth(100);
-
-        ComboBox<ParkingSpotType> typeCombo = new ComboBox<>();
-        typeCombo.getItems().setAll(ParkingSpotType.values());
-        typeCombo.setValue(ParkingSpotType.COMPACT);
-
-        Button addSpotBtn = new Button("Add Spot");
-        addSpotBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
-        
-        Button deleteSpotBtn = new Button("Delete Spot");
-        deleteSpotBtn.setStyle("-fx-background-color: #636e72; -fx-text-fill: white; -fx-font-weight: bold;");
-        deleteSpotBtn.setOnAction(e -> {
-            String floor = floorListView.getSelectionModel().getSelectedItem();
-            ParkingSpot spot = spotTable.getSelectionModel().getSelectedItem();
-            if (floor != null && spot != null) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete spot: " + spot.getNumber() + "?", ButtonType.YES, ButtonType.NO);
-                alert.showAndWait().ifPresent(response -> {
-                    if (response == ButtonType.YES) {
-                        new Thread(() -> {
-                            try {
-                                appContext.apiManager.deleteSpot(floor, spot.getNumber());
-                                javafx.application.Platform.runLater(() -> appContext.apiManager.syncData());
-                            } catch (Exception ex) {
-                                ex.printStackTrace();
-                            }
-                        }).start();
-                    }
-                });
-            }
-        });
-
-        spotControls.getChildren().addAll(spotNumField, typeCombo, addSpotBtn, deleteSpotBtn);
-
-        spotContainer.getChildren().addAll(spotTitle, spotTable, spotControls);
-
+        spotContainer.getChildren().addAll(new Label("PARKING SPOTS"), spotTable);
         splitPane.getItems().addAll(floorListContainer, spotContainer);
-        splitPane.setDividerPositions(0.3);
-
         root.getChildren().addAll(title, splitPane);
         return root;
     }
