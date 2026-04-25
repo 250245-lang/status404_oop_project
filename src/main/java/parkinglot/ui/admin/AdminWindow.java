@@ -16,7 +16,7 @@ public class AdminWindow {
 
     public void show() {
         // Initial data sync
-        new Thread(() -> appContext.apiManager.syncData()).start();
+        syncAsync();
 
         TabPane tabPane = new TabPane();
         Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
@@ -28,10 +28,10 @@ public class AdminWindow {
         tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, rateTab, ticketsTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        // Sync logic: Refresh data when switching tabs
+        // Sync logic: Refresh data when switching tabs for consistency
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
-                new Thread(() -> appContext.apiManager.syncData()).start();
+                syncAsync();
             }
         });
 
@@ -43,6 +43,10 @@ public class AdminWindow {
         root.setPadding(new Insets(0, 0, 10, 0));
 
         appContext.resetToView(root, "Admin Panel - Parking Lot System", 1000, 700, true);
+    }
+
+    private void syncAsync() {
+        new Thread(() -> appContext.apiManager.syncData()).start();
     }
 
     private StackPane createPlaceholder(String text) {
