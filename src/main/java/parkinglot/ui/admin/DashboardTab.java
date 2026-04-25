@@ -10,6 +10,7 @@ import javafx.scene.layout.*;
 import parkinglot.managers.AppContext;
 import parkinglot.models.ParkingFloor;
 import parkinglot.models.ParkingLot;
+import parkinglot.users.Account;
 
 public class DashboardTab {
     private final AppContext appContext;
@@ -18,6 +19,7 @@ public class DashboardTab {
     private final Label ticketLabel = new Label("0");
     private final Label staffLabel = new Label("0");
     private final VBox floorContainer = new VBox(15);
+    private final Label welcomeUserLabel = new Label("Welcome back!");
 
     public DashboardTab(AppContext appContext) {
         this.appContext = appContext;
@@ -37,6 +39,12 @@ public class DashboardTab {
         if (appContext.getParkingLot() != null) {
             updateStats(appContext.getParkingLot());
             fetchStaffCount();
+        }
+
+        // Update user session info
+        Account current = appContext.getAccount();
+        if (current != null) {
+            welcomeUserLabel.setText("Welcome back, " + current.getUsername() + " (" + current.getRole() + ")");
         }
     }
 
@@ -71,8 +79,11 @@ public class DashboardTab {
         root.setPadding(new Insets(30));
         root.setStyle("-fx-background-color: #f4f7f6;");
 
-        Label welcome = new Label("System Overview Dashboard");
-        welcome.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        VBox header = new VBox(5);
+        Label title = new Label("System Overview Dashboard");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        welcomeUserLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+        header.getChildren().addAll(title, welcomeUserLabel);
 
         HBox statCards = new HBox(25);
         statCards.setAlignment(Pos.CENTER);
@@ -87,7 +98,7 @@ public class DashboardTab {
         floorTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #b2bec3; -fx-font-size: 11px;");
         bottomSection.getChildren().addAll(floorTitle, floorContainer);
 
-        root.getChildren().addAll(welcome, statCards, bottomSection);
+        root.getChildren().addAll(header, statCards, bottomSection);
         
         ScrollPane scrollPane = new ScrollPane(root);
         scrollPane.setFitToWidth(true);
