@@ -13,6 +13,7 @@ import javafx.scene.text.FontWeight;
 import parkinglot.managers.AppContext;
 import parkinglot.ui.hardware.EntrancePanelWindow;
 import parkinglot.ui.hardware.ExitPanelWindow;
+import parkinglot.ui.login_system.LoginWindow;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
@@ -34,8 +35,8 @@ public class TopBar extends BorderPane {
         clockLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #7f8c8d;");
         leftBox.getChildren().addAll(titleLabel, clockLabel);
         
-        HBox simulators = new HBox(10);
-        simulators.setAlignment(Pos.CENTER_RIGHT);
+        HBox actions = new HBox(15);
+        actions.setAlignment(Pos.CENTER_RIGHT);
 
         Button entranceBtn = new Button("Open Entrance");
         entranceBtn.setOnAction(e -> new EntrancePanelWindow(appContext).show());
@@ -43,10 +44,19 @@ public class TopBar extends BorderPane {
         Button exitBtn = new Button("Open Exit");
         exitBtn.setOnAction(e -> new ExitPanelWindow(appContext).show());
 
-        simulators.getChildren().addAll(entranceBtn, exitBtn);
+        Button logoutBtn = new Button("Logout");
+        logoutBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
+        logoutBtn.setOnAction(e -> {
+            clockScheduler.shutdownNow();
+            appContext.apiManager.clearToken();
+            appContext.setAccount(null);
+            new LoginWindow(appContext).show();
+        });
+
+        actions.getChildren().addAll(entranceBtn, exitBtn, logoutBtn);
 
         this.setLeft(leftBox);
-        this.setRight(simulators);
+        this.setRight(actions);
         
         BorderPane.setAlignment(leftBox, Pos.CENTER_LEFT);
         
