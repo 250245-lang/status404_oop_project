@@ -1,10 +1,12 @@
 package parkinglot.ui.admin;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import parkinglot.managers.AppContext;
+import parkinglot.models.ParkingRate;
 
 public class RatesTab {
     private final AppContext appContext;
@@ -13,45 +15,62 @@ public class RatesTab {
         this.appContext = appContext;
     }
 
-    public ScrollPane getContent() {
-        VBox root = new VBox(30);
-        root.setPadding(new Insets(40));
-        root.setAlignment(Pos.TOP_CENTER);
+    public Node getContent() {
+        VBox root = new VBox(25);
+        root.setPadding(new Insets(30));
         root.setStyle("-fx-background-color: #f4f7f6;");
 
         Label title = new Label("Parking Rate Configuration");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        VBox formCard = new VBox(20);
-        formCard.setPadding(new Insets(25));
-        formCard.setMaxWidth(500);
-        formCard.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
+        VBox card = new VBox(20);
+        card.setPadding(new Insets(25));
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);");
 
         GridPane grid = new GridPane();
-        grid.setHgap(20);
-        grid.setVgap(20);
+        grid.setHgap(15);
+        grid.setVgap(15);
 
-        addRateField(grid, "First Hour Rate:", 0);
-        addRateField(grid, "Second Hour Rate:", 1);
-        addRateField(grid, "Remaining Hours Rate:", 2);
+        TextField hourlyRateField = new TextField();
+        TextField maxRateField = new TextField();
+        
+        grid.add(new Label("Hourly Rate ($):"), 0, 0);
+        grid.add(hourlyRateField, 1, 0);
+        grid.add(new Label("Maximum Daily Cap ($):"), 0, 1);
+        grid.add(maxRateField, 1, 1);
 
-        Button saveBtn = new Button("Update Parking Rates");
-        saveBtn.setMaxWidth(Double.MAX_VALUE);
-        saveBtn.setStyle("-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;");
+        Button saveBtn = new Button("Apply New Rates");
+        saveBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+        saveBtn.setPrefWidth(200);
 
-        formCard.getChildren().addAll(grid, new Separator(), saveBtn);
+        saveBtn.setOnAction(e -> {
+            try {
+                double hourly = Double.parseDouble(hourlyRateField.getText());
+                double max = Double.parseDouble(maxRateField.getText());
+                ParkingRate rate = new ParkingRate(hourly, max);
+                
+                new Thread(() -> {
+                    try {
+                        appContext.apiManager.updateRates(rate);
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Rates updated successfully!");
+                            alert.show();
+                        });
+                    } catch (Exception ex) {
+                        Platform.runLater(() -> {
+                            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update rates.");
+                            alert.show();
+                        });
+                    }
+                }).start();
+            } catch (NumberFormatException ex) {
+                new Alert(Alert.AlertType.WARNING, "Please enter valid numeric values.").show();
+            }
+        });
 
-        root.getChildren().addAll(title, formCard);
+        card.getChildren().addAll(grid, saveBtn);
+        root.getChildren().addAll(title, card);
 
-        ScrollPane scrollPane = new ScrollPane(root);
-        scrollPane.setFitToWidth(true);
-        return scrollPane;
-    }
-
-    private void addRateField(GridPane grid, String label, int row) {
-        grid.add(new Label(label), 0, row);
-        TextField field = new TextField();
-        field.setPrefWidth(100);
-        grid.add(field, 1, row);
+        return root;
     }
 }
