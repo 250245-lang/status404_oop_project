@@ -3,134 +3,143 @@ package parkinglot.ui.admin;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import parkinglot.managers.AppContext;
 import parkinglot.models.ParkingFloor;
 import parkinglot.models.ParkingLot;
-import parkinglot.users.Account;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class DashboardTab {
     private final AppContext appContext;
     
-    private final Label occupancyLabel = new Label("0%");
-    private final Label ticketLabel = new Label("0");
-    private final Label staffLabel = new Label("0");
-    private final VBox floorContainer = new VBox(15);
-    private final Label welcomeUserLabel = new Label("Welcome back!");
+    private final Label occupancyValue = new Label("0/0");
+    private final Label activeTicketsValue = new Label("0");
+    private final Label staffValue = new Label("0");
+    private final Label baseRateValue = new Label("$0.00");
+    private final VBox floorStatusContainer = new VBox(15);
+    private final Label lastUpdateLabel = new Label("Last updated: Never");
 
     public DashboardTab(AppContext appContext) {
         this.appContext = appContext;
-        setupDataBinding();
+        setupListeners();
     }
 
-    private void setupDataBinding() {
+    private void setupListeners() {
         appContext.parkingLotProperty().addListener((obs, oldLot, newLot) -> {
             if (newLot != null) {
-                Platform.runLater(() -> {
-                    updateStats(newLot);
-                    fetchStaffCount();
-                });
+                Platform.runLater(() -> updateUI(newLot));
             }
         });
         
         if (appContext.getParkingLot() != null) {
-            updateStats(appContext.getParkingLot());
-            fetchStaffCount();
-        }
-
-        // Update user session info
-        Account current = appContext.getAccount();
-        if (current != null) {
-            welcomeUserLabel.setText("Welcome back, " + current.getUsername() + " (" + current.getRole() + ")");
+            updateUI(appContext.getParkingLot());
         }
     }
 
-    private void fetchStaffCount() {
+    private void updateUI(ParkingLot lot) {
+        long totalSpots = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).count();
+        long occupiedSpots = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).filter(s -> !s.isFree()).count();
+        
+        occupancyValue.setText(occupiedSpots + "/" + totalSpots);
+        activeTicketsValue.setText(String.valueOf(lot.getAllTickets().size()));
+        
         new Thread(() -> {
             try {
                 int count = appContext.apiManager.getAccounts().size();
-                Platform.runLater(() -> staffLabel.setText(String.valueOf(count)));
+                Platform.runLater(() -> staffValue.setText(String.valueOf(count)));
             } catch (Exception ignored) {}
         }).start();
-    }
 
-    private void updateStats(ParkingLot lot) {
-        int totalSpots = lot.getFloors().stream().mapToInt(f -> f.getSpots().size()).sum();
-        int occupiedSpots = (int) lot.getFloors().stream()
-                .flatMap(f -> f.getSpots().stream())
-                .filter(s -> !s.isFree())
-                .count();
-        
-        double percent = totalSpots > 0 ? (occupiedSpots * 100.0 / totalSpots) : 0;
-        occupancyLabel.setText(String.format("%.1f%%", percent));
-        ticketLabel.setText(String.valueOf(lot.getAllTickets().size()));
-
-        floorContainer.getChildren().clear();
+        floorStatusContainer.getChildren().clear();
         for (ParkingFloor floor : lot.getFloors()) {
-            floorContainer.getChildren().add(createFloorRow(floor));
+            floorStatusContainer.getChildren().add(createFloorStatusRow(floor));
         }
+
+        lastUpdateLabel.setText("Last updated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
     public Node getContent() {
         VBox root = new VBox(30);
         root.setPadding(new Insets(30));
-        root.setStyle("-fx-background-color: #f4f7f6;");
+        root.setStyle("-fx-background-color: #f8f9fa;");
 
-        VBox header = new VBox(5);
-        Label title = new Label("System Overview Dashboard");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-        welcomeUserLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
-        header.getChildren().addAll(title, welcomeUserLabel);
+        HBox header = new HBox();
+        header.setAlignment(Pos.CENTER_LEFT);
+        VBox titleBox = new VBox(5);
+        Label title = new Label("Management Dashboard");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+        titleBox.getChildren().add(title);
+        
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox statusIndicator = new HBox(10, new Circle(5, Color.web("#27ae60")), new Label("LIVE SYSTEM STATUS"));
+        statusIndicator.setAlignment(Pos.CENTER);
+        header.getChildren().addAll(titleBox, spacer, statusIndicator);
 
-        HBox statCards = new HBox(25);
+        HBox statCards = new HBox(20);
         statCards.setAlignment(Pos.CENTER);
         statCards.getChildren().addAll(
-                createStatCard("CURRENT OCCUPANCY", occupancyLabel, "#0984e3"),
-                createStatCard("ACTIVE TICKETS", ticketLabel, "#00b894"),
-                createStatCard("TOTAL STAFF", staffLabel, "#6c5ce7")
+                createStatCard("Occupancy", occupancyValue, "Total slots used", "#0984e3"),
+                createStatCard("Active Tickets", activeTicketsValue, "Vehicles in lot", "#e17055"),
+                createStatCard("Total Staff", staffValue, "Registered users", "#6c5ce7"),
+                createStatCard("Base Rate", baseRateValue, "Initial per/hour", "#00b894")
         );
 
-        VBox bottomSection = new VBox(15);
-        Label floorTitle = new Label("FLOOR UTILIZATION");
-        floorTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #b2bec3; -fx-font-size: 11px;");
-        bottomSection.getChildren().addAll(floorTitle, floorContainer);
-
-        root.getChildren().addAll(header, statCards, bottomSection);
+        HBox mainContent = new HBox(20);
+        VBox floorSection = createContentCard("Floor Occupancy Breakdown");
+        floorSection.getChildren().add(floorStatusContainer);
+        HBox.setHgrow(floorSection, Priority.ALWAYS);
         
-        ScrollPane scrollPane = new ScrollPane(root);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: #f4f7f6;");
-        return scrollPane;
+        VBox infoSection = createContentCard("System Information");
+        infoSection.setMinWidth(300);
+        infoSection.getChildren().addAll(new Label("Server IP: " + appContext.apiManager.getServerAddress().ip), new Separator(), lastUpdateLabel);
+
+        mainContent.getChildren().addAll(floorSection, infoSection);
+        root.getChildren().addAll(header, statCards, mainContent);
+        
+        ScrollPane scroll = new ScrollPane(root);
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background-color: transparent; -fx-background: #f8f9fa;");
+        return scroll;
     }
 
-    private VBox createStatCard(String title, Label valueLabel, String color) {
-        VBox card = new VBox(10);
-        card.setPrefSize(220, 120);
+    private VBox createStatCard(String title, Label value, String desc, String color) {
+        VBox card = new VBox(5);
         card.setPadding(new Insets(20));
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5); -fx-border-color: " + color + "; -fx-border-width: 0 0 0 5;");
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #b2bec3;");
-        valueLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-        card.getChildren().addAll(titleLabel, valueLabel);
+        card.setMinWidth(200);
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);");
+        Label t = new Label(title.toUpperCase());
+        t.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #b2bec3;");
+        value.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+        card.getChildren().addAll(t, value, new Label(desc));
         return card;
     }
 
-    private HBox createFloorRow(ParkingFloor floor) {
-        HBox row = new HBox(20);
+    private VBox createContentCard(String title) {
+        VBox card = new VBox(20);
+        card.setPadding(new Insets(25));
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
+        Label lbl = new Label(title);
+        lbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+        card.getChildren().add(lbl);
+        return card;
+    }
+
+    private HBox createFloorStatusRow(ParkingFloor floor) {
+        HBox row = new HBox(15);
         row.setAlignment(Pos.CENTER_LEFT);
-        row.setPadding(new Insets(15, 20, 15, 20));
-        row.setStyle("-fx-background-color: white; -fx-background-radius: 8;");
         Label name = new Label(floor.getName());
-        name.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        name.setPrefWidth(150);
-        int total = floor.getSpots().size();
-        int free = (int) floor.getSpots().stream().filter(s -> s.isFree()).count();
-        Label status = new Label(String.format("%d / %d Spots Available", free, total));
-        status.setStyle("-fx-text-fill: #636e72;");
-        row.getChildren().addAll(name, status);
+        name.setMinWidth(100);
+        long total = floor.getSpots().size();
+        long occupied = floor.getSpots().stream().filter(s -> !s.isFree()).count();
+        ProgressBar bar = new ProgressBar(total > 0 ? (double) occupied / total : 0);
+        bar.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(bar, Priority.ALWAYS);
+        row.getChildren().addAll(name, bar, new Label(occupied + "/" + total));
         return row;
     }
 }
