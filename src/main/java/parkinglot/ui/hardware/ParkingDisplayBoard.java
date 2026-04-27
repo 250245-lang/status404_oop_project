@@ -92,7 +92,6 @@ public class ParkingDisplayBoard {
                             updateSummary(floor.getSpots());
                             rebuildGrid(floor.getSpots());
                             
-                            // Lot Full Indicator
                             boolean isLotFull = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).allMatch(s -> !s.isFree());
                             if (isLotFull) {
                                 floorLabel.setText("Floor: " + floorName + " (LOT FULL)");
@@ -121,7 +120,6 @@ public class ParkingDisplayBoard {
         for (ParkingSpotType type : ParkingSpotType.values()) {
             long totalOfType = spots.stream().filter(s -> s.getType() == type).count();
             long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
-            if (totalOfType == 0) continue;
 
             VBox box = new VBox(2);
             box.setAlignment(Pos.CENTER);
@@ -131,8 +129,19 @@ public class ParkingDisplayBoard {
             Label typeLbl = new Label(type.toString());
             typeLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #b2bec3;");
             
-            String countText = (freeOfType == 0) ? "FULL" : String.valueOf(freeOfType);
-            String countColor = (freeOfType == 0) ? "#d63031" : "#81ecec";
+            String countText;
+            String countColor;
+
+            if (totalOfType == 0) {
+                countText = "N/A";
+                countColor = "#636e72";
+            } else if (freeOfType == 0) {
+                countText = "FULL";
+                countColor = "#d63031";
+            } else {
+                countText = String.valueOf(freeOfType);
+                countColor = "#81ecec";
+            }
 
             Label countLbl = new Label(countText);
             countLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + countColor + ";");
