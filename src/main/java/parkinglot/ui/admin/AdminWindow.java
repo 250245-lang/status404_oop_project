@@ -41,18 +41,20 @@ public class AdminWindow {
         
         refreshData();
 
-        // Auto-refresh logic
+        // Improved Auto-refresh logic
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(() -> Platform.runLater(() -> {
-            if (tabPane.getScene() != null && (
-                tabPane.getSelectionModel().getSelectedItem() == dashboardTab ||
-                tabPane.getSelectionModel().getSelectedItem() == ticketsTab
-            )) {
-                refreshData();
-            } else if (tabPane.getScene() == null) {
-                scheduler.shutdown();
-            }
-        }), 3, 3, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(() -> {
+            Platform.runLater(() -> {
+                if (tabPane.getScene() != null && tabPane.getScene().getWindow().isShowing()) {
+                    if (tabPane.getSelectionModel().getSelectedItem() == dashboardTab ||
+                        tabPane.getSelectionModel().getSelectedItem() == ticketsTab) {
+                        refreshData();
+                    }
+                } else {
+                    scheduler.shutdown();
+                }
+            });
+        }, 5, 5, TimeUnit.SECONDS);
     }
 
     public void refreshData() {
