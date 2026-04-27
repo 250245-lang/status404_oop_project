@@ -25,7 +25,7 @@ public class RatesTab {
 
         VBox card = new VBox(20);
         card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 5);");
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
 
         GridPane grid = new GridPane();
         grid.setHgap(15);
@@ -41,30 +41,29 @@ public class RatesTab {
 
         Button saveBtn = new Button("Apply New Rates");
         saveBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
-        saveBtn.setPrefWidth(200);
 
         saveBtn.setOnAction(e -> {
             try {
                 double hourly = Double.parseDouble(hourlyRateField.getText());
                 double max = Double.parseDouble(maxRateField.getText());
-                ParkingRate rate = new ParkingRate(hourly, max);
                 
+                // Format to 2 decimal places before saving
+                hourly = Double.parseDouble(String.format("%.2f", hourly));
+                max = Double.parseDouble(String.format("%.2f", max));
+                
+                ParkingRate rate = new ParkingRate(hourly, max);
                 new Thread(() -> {
                     try {
                         appContext.apiManager.updateRates(rate);
                         Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION, "Rates updated successfully!");
-                            alert.show();
+                            new Alert(Alert.AlertType.INFORMATION, "Rates updated to: $" + String.format("%.2f", rate.getHourlyRate())).show();
                         });
                     } catch (Exception ex) {
-                        Platform.runLater(() -> {
-                            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update rates.");
-                            alert.show();
-                        });
+                        Platform.runLater(() -> new Alert(Alert.AlertType.ERROR, "Update failed").show());
                     }
                 }).start();
             } catch (NumberFormatException ex) {
-                new Alert(Alert.AlertType.WARNING, "Please enter valid numeric values.").show();
+                new Alert(Alert.AlertType.WARNING, "Invalid input").show();
             }
         });
 
