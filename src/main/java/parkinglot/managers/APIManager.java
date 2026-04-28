@@ -69,6 +69,10 @@ public class APIManager {
         restTemplate.delete(serverAddress + "/api/parking/floors/" + floorName + "/spots/" + spotNumber);
     }
 
+    public void deleteTicket(String ticketNumber) {
+        restTemplate.delete(serverAddress + "/api/parking/tickets/" + ticketNumber);
+    }
+
     public void updateRates(ParkingRate rates) {
         restTemplate.postForObject(serverAddress + "/api/parking/rates", rates, Void.class);
     }
