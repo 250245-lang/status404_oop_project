@@ -17,6 +17,10 @@ public class TicketsTab {
     private final ObservableList<ParkingTicket> masterData = FXCollections.observableArrayList();
     private final FilteredList<ParkingTicket> filteredData = new FilteredList<>(masterData, p -> true);
 
+    private final TextField searchField = new TextField();
+    private final ComboBox<String> statusFilter = new ComboBox<>();
+    private final CheckBox activeOnly = new CheckBox("Active Only");
+
     public TicketsTab(AppContext appContext) {
         this.appContext = appContext;
         setupDataBinding();
@@ -47,19 +51,17 @@ public class TicketsTab {
         HBox filterBar = new HBox(15);
         filterBar.setAlignment(Pos.CENTER_LEFT);
 
-        TextField searchField = new TextField();
         searchField.setPromptText("Search by Ticket or License...");
-        searchField.setPrefWidth(300);
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            filteredData.setPredicate(ticket -> {
-                if (newVal == null || newVal.isEmpty()) return true;
-                String lower = newVal.toLowerCase();
-                return ticket.getTicketNumber().toLowerCase().contains(lower) ||
-                       ticket.getVehicleLicense().toLowerCase().contains(lower);
-            });
-        });
+        searchField.setPrefWidth(250);
+        
+        statusFilter.getItems().setAll("ALL", "ACTIVE", "PAID", "COMPLETED");
+        statusFilter.setValue("ALL");
 
-        filterBar.getChildren().addAll(new Label("Filter:"), searchField);
+        searchField.textProperty().addListener(obs -> updatePredicate());
+        statusFilter.valueProperty().addListener(obs -> updatePredicate());
+        activeOnly.selectedProperty().addListener(obs -> updatePredicate());
+
+        filterBar.getChildren().addAll(new Label("Filter:"), searchField, statusFilter, activeOnly);
 
         TableView<ParkingTicket> ticketTable = new TableView<>(filteredData);
         TableColumn<ParkingTicket, String> idCol = new TableColumn<>("Ticket Number");
@@ -75,5 +77,31 @@ public class TicketsTab {
 
         root.getChildren().addAll(title, filterBar, ticketTable);
         return root;
+    }
+
+    private void updatePredicate() {
+        filteredData.setPredicate(ticket -> {
+            // Search filter
+            String search = searchField.getText();
+            if (search != null && !search.isEmpty()) {
+                String lower = search.toLowerCase();
+                boolean matchesSearch = ticket.getTicketNumber().toLowerCase().contains(lower) ||
+                                      ticket.getVehicleLicense().toLowerCase().contains(lower);
+                if (!matchesSearch) return false;
+            }
+
+            // Status filter
+            String status = statusFilter.getValue();
+            if (status != null && !status.equals("ALL")) {
+                if (!ticket.getStatus().toString().equals(status)) return false;
+            }
+
+            // Active only filter
+            if (activeOnly.isSelected()) {
+                if (!ticket.getStatus().toString().equals("ACTIVE")) return false;
+            }
+
+            return true;
+        });
     }
 }
