@@ -14,12 +14,17 @@ import java.util.concurrent.TimeUnit;
 
 public class AdminWindow {
     private final AppContext appContext;
+    private ScheduledExecutorService scheduler;
 
     public AdminWindow(AppContext appContext) {
         this.appContext = appContext;
     }
 
     public void show() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
+
         TabPane tabPane = new TabPane();
         Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
         Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext).getContent());
@@ -41,8 +46,7 @@ public class AdminWindow {
         
         refreshData();
 
-        // Improved Auto-refresh logic
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> {
             Platform.runLater(() -> {
                 if (tabPane.getScene() != null && tabPane.getScene().getWindow().isShowing()) {
