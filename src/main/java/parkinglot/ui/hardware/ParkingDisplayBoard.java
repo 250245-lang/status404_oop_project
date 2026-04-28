@@ -5,6 +5,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
@@ -29,6 +30,7 @@ public class ParkingDisplayBoard {
     private final Label occupiedLabel = new Label("-- Occupied");
     private final FlowPane spotGrid = new FlowPane();
     private final Label floorLabel = new Label();
+    private final ProgressBar occupancyBar = new ProgressBar(0);
 
     public ParkingDisplayBoard(AppContext appContext, String floorName) {
         this.appContext = appContext;
@@ -58,10 +60,14 @@ public class ParkingDisplayBoard {
         occupiedLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #d63031;");
         statsRow.getChildren().addAll(availLabel, occupiedLabel);
 
+        occupancyBar.setMaxWidth(Double.MAX_VALUE);
+        occupancyBar.setPrefHeight(15);
+        occupancyBar.setStyle("-fx-accent: #00b894;");
+
         summaryRow.setPadding(new Insets(10, 0, 0, 0));
         summaryRow.setAlignment(Pos.CENTER_LEFT);
 
-        header.getChildren().addAll(titleLabel, floorLabel, statsRow, summaryRow);
+        header.getChildren().addAll(titleLabel, floorLabel, occupancyBar, statsRow, summaryRow);
 
         // --- Spot Grid ---
         spotGrid.setHgap(15);
@@ -76,7 +82,7 @@ public class ParkingDisplayBoard {
         root.setTop(header);
         root.setCenter(scroll);
 
-        stage.setScene(new Scene(root, 850, 650));
+        stage.setScene(new Scene(root, 850, 700));
         stage.setOnCloseRequest(e -> scheduler.shutdownNow());
         stage.show();
 
@@ -92,6 +98,12 @@ public class ParkingDisplayBoard {
                             updateSummary(floor.getSpots());
                             rebuildGrid(floor.getSpots());
                             
+                            double progress = (double) (floor.getSpots().size() - floor.getSpots().stream().filter(ParkingSpot::isFree).count()) / floor.getSpots().size();
+                            occupancyBar.setProgress(progress);
+                            if (progress > 0.9) occupancyBar.setStyle("-fx-accent: #d63031;");
+                            else if (progress > 0.7) occupancyBar.setStyle("-fx-accent: #f39c12;");
+                            else occupancyBar.setStyle("-fx-accent: #00b894;");
+
                             boolean isLotFull = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).allMatch(s -> !s.isFree());
                             if (isLotFull) {
                                 floorLabel.setText("Floor: " + floorName + " (LOT FULL)");
@@ -113,39 +125,23 @@ public class ParkingDisplayBoard {
         summaryRow.getChildren().clear();
         int totalFree = (int) spots.stream().filter(ParkingSpot::isFree).count();
         int totalOccupied = spots.size() - totalFree;
-
         availLabel.setText(totalFree + " Available");
         occupiedLabel.setText(totalOccupied + " Occupied");
 
         for (ParkingSpotType type : ParkingSpotType.values()) {
             long totalOfType = spots.stream().filter(s -> s.getType() == type).count();
             long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
-
+            if (totalOfType == 0) continue;
             VBox box = new VBox(2);
             box.setAlignment(Pos.CENTER);
             box.setPadding(new Insets(5, 10, 5, 10));
             box.setStyle("-fx-background-color: #1a1a1a; -fx-background-radius: 5;");
-            
             Label typeLbl = new Label(type.toString());
             typeLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #b2bec3;");
-            
-            String countText;
-            String countColor;
-
-            if (totalOfType == 0) {
-                countText = "N/A";
-                countColor = "#636e72";
-            } else if (freeOfType == 0) {
-                countText = "FULL";
-                countColor = "#d63031";
-            } else {
-                countText = String.valueOf(freeOfType);
-                countColor = "#81ecec";
-            }
-
+            String countText = (freeOfType == 0) ? "FULL" : String.valueOf(freeOfType);
+            String countColor = (freeOfType == 0) ? "#d63031" : "#81ecec";
             Label countLbl = new Label(countText);
             countLbl.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: " + countColor + ";");
-            
             box.getChildren().addAll(typeLbl, countLbl);
             summaryRow.getChildren().add(box);
         }
