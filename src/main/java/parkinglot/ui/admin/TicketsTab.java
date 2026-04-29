@@ -75,6 +75,18 @@ public class TicketsTab {
         ticketTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         VBox.setVgrow(ticketTable, Priority.ALWAYS);
 
+        // Fixed Double-Click Handler
+        ticketTable.setRowFactory(tv -> {
+            TableRow<ParkingTicket> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    ParkingTicket ticket = row.getItem();
+                    showTicketInfo(ticket);
+                }
+            });
+            return row;
+        });
+
         deleteBtn.setOnAction(e -> {
             ParkingTicket selected = ticketTable.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -96,6 +108,16 @@ public class TicketsTab {
 
         root.getChildren().addAll(title, filterBar, ticketTable);
         return root;
+    }
+
+    private void showTicketInfo(ParkingTicket ticket) {
+        Alert info = new Alert(Alert.AlertType.INFORMATION);
+        info.setTitle("Ticket Details");
+        info.setHeaderText("Ticket #" + ticket.getTicketNumber());
+        info.setContentText("License Plate: " + ticket.getVehicleLicense() + "\n" +
+                           "Entry Time: " + ticket.getEntryTime() + "\n" +
+                           "Status: " + ticket.getStatus());
+        info.show();
     }
 
     private void updatePredicate() {
