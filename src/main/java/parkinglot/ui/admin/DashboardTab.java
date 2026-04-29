@@ -3,6 +3,7 @@ package parkinglot.ui.admin;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -34,7 +35,6 @@ public class DashboardTab {
                 Platform.runLater(() -> updateUI(newLot));
             }
         });
-        
         if (appContext.getParkingLot() != null) {
             updateUI(appContext.getParkingLot());
         }
@@ -43,7 +43,6 @@ public class DashboardTab {
     private void updateUI(ParkingLot lot) {
         long totalSpots = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).count();
         long occupiedSpots = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).filter(s -> !s.isFree()).count();
-        
         occupancyValue.setText(occupiedSpots + "/" + totalSpots);
         activeTicketsValue.setText(String.valueOf(lot.getAllTickets().size()));
         
@@ -58,7 +57,6 @@ public class DashboardTab {
         for (ParkingFloor floor : lot.getFloors()) {
             floorStatusContainer.getChildren().add(createFloorStatusRow(floor));
         }
-
         lastUpdateLabel.setText("Last updated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
     }
 
@@ -71,7 +69,7 @@ public class DashboardTab {
         header.setAlignment(Pos.CENTER_LEFT);
         VBox titleBox = new VBox(5);
         Label title = new Label("Management Dashboard");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+        title.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
         titleBox.getChildren().add(title);
         
         Region spacer = new Region();
@@ -109,22 +107,24 @@ public class DashboardTab {
 
     private VBox createStatCard(String title, Label value, String desc, String color) {
         VBox card = new VBox(5);
-        card.setPadding(new Insets(20));
-        card.setMinWidth(200);
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);");
+        card.setPadding(new Insets(25));
+        card.setMinWidth(220);
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 15, 0, 0, 8); -fx-border-color: " + color + "; -fx-border-width: 0 0 4 0; -fx-border-radius: 12;");
         Label t = new Label(title.toUpperCase());
         t.setStyle("-fx-font-weight: bold; -fx-font-size: 11px; -fx-text-fill: #b2bec3;");
-        value.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
-        card.getChildren().addAll(t, value, new Label(desc));
+        value.setStyle("-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+        Label d = new Label(desc);
+        d.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72;");
+        card.getChildren().addAll(t, value, d);
         return card;
     }
 
     private VBox createContentCard(String title) {
         VBox card = new VBox(20);
-        card.setPadding(new Insets(25));
-        card.setStyle("-fx-background-color: white; -fx-background-radius: 10;");
+        card.setPadding(new Insets(30));
+        card.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 10, 0, 0, 5);");
         Label lbl = new Label(title);
-        lbl.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+        lbl.setStyle("-fx-font-weight: bold; -fx-font-size: 18px; -fx-text-fill: #2d3436;");
         card.getChildren().add(lbl);
         return card;
     }
@@ -133,10 +133,12 @@ public class DashboardTab {
         HBox row = new HBox(15);
         row.setAlignment(Pos.CENTER_LEFT);
         Label name = new Label(floor.getName());
-        name.setMinWidth(100);
+        name.setMinWidth(120);
+        name.setStyle("-fx-font-weight: bold;");
         long total = floor.getSpots().size();
         long occupied = floor.getSpots().stream().filter(s -> !s.isFree()).count();
         ProgressBar bar = new ProgressBar(total > 0 ? (double) occupied / total : 0);
+        bar.setPrefHeight(10);
         bar.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(bar, Priority.ALWAYS);
         row.getChildren().addAll(name, bar, new Label(occupied + "/" + total));
