@@ -45,15 +45,15 @@ public class ParkingDisplayBoard {
         root.setStyle("-fx-background-color: #0a0a0a;");
 
         // --- Header ---
-        VBox header = new VBox(10);
-        header.setPadding(new Insets(20, 30, 20, 30));
-        header.setStyle("-fx-background-color: #111;");
+        VBox header = new VBox(15);
+        header.setPadding(new Insets(25, 30, 25, 30));
+        header.setStyle("-fx-background-color: #111; -fx-border-color: #333; -fx-border-width: 0 0 1 0;");
 
         Label titleLabel = new Label("PARKING DISPLAY BOARD");
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #636e72;");
 
         floorLabel.setText("Floor: " + floorName);
-        floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #dfe6e9;");
+        floorLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #dfe6e9;");
 
         HBox statsRow = new HBox(40);
         availLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #00b894;");
@@ -61,32 +61,35 @@ public class ParkingDisplayBoard {
         statsRow.getChildren().addAll(availLabel, occupiedLabel);
 
         occupancyBar.setMaxWidth(Double.MAX_VALUE);
-        occupancyBar.setPrefHeight(15);
+        occupancyBar.setPrefHeight(12);
         occupancyBar.setStyle("-fx-accent: #00b894;");
 
-        summaryRow.setPadding(new Insets(10, 0, 0, 0));
+        summaryRow.setPadding(new Insets(5, 0, 0, 0));
         summaryRow.setAlignment(Pos.CENTER_LEFT);
 
         header.getChildren().addAll(titleLabel, floorLabel, occupancyBar, statsRow, summaryRow);
 
-        // --- Spot Grid ---
+        // --- Responsive Spot Grid ---
         spotGrid.setHgap(15);
         spotGrid.setVgap(15);
         spotGrid.setPadding(new Insets(30));
         spotGrid.setStyle("-fx-background-color: #0a0a0a;");
 
         ScrollPane scroll = new ScrollPane(spotGrid);
-        scroll.setStyle("-fx-background: #0a0a0a; -fx-background-color: #0a0a0a;");
+        scroll.setStyle("-fx-background: #0a0a0a; -fx-background-color: #0a0a0a; -fx-border-width: 0;");
         scroll.setFitToWidth(true);
+        
+        // Responsive binding
+        spotGrid.prefWidthProperty().bind(scroll.widthProperty().subtract(60));
 
         root.setTop(header);
         root.setCenter(scroll);
 
-        stage.setScene(new Scene(root, 850, 700));
+        stage.setScene(new Scene(root, 900, 750));
         stage.setOnCloseRequest(e -> scheduler.shutdownNow());
         stage.show();
 
-        // Start Periodic Refresh
+        // Periodic Refresh
         scheduler.scheduleAtFixedRate(() -> {
             try {
                 appContext.apiManager.syncData();
@@ -97,45 +100,32 @@ public class ParkingDisplayBoard {
                         if (floor != null) {
                             updateSummary(floor.getSpots());
                             rebuildGrid(floor.getSpots());
-                            
                             double progress = (double) (floor.getSpots().size() - floor.getSpots().stream().filter(ParkingSpot::isFree).count()) / floor.getSpots().size();
                             occupancyBar.setProgress(progress);
                             if (progress > 0.9) occupancyBar.setStyle("-fx-accent: #d63031;");
                             else if (progress > 0.7) occupancyBar.setStyle("-fx-accent: #f39c12;");
                             else occupancyBar.setStyle("-fx-accent: #00b894;");
-
-                            boolean isLotFull = lot.getFloors().stream().flatMap(f -> f.getSpots().stream()).allMatch(s -> !s.isFree());
-                            if (isLotFull) {
-                                floorLabel.setText("Floor: " + floorName + " (LOT FULL)");
-                                floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #d63031;");
-                            } else {
-                                floorLabel.setText("Floor: " + floorName);
-                                floorLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #dfe6e9;");
-                            }
                         }
                     }
                 });
-            } catch (Exception e) {
-                System.err.println("Refresh failed: " + e.getMessage());
-            }
+            } catch (Exception ignored) {}
         }, 0, 5, TimeUnit.SECONDS);
     }
 
     private void updateSummary(List<ParkingSpot> spots) {
         summaryRow.getChildren().clear();
         int totalFree = (int) spots.stream().filter(ParkingSpot::isFree).count();
-        int totalOccupied = spots.size() - totalFree;
         availLabel.setText(totalFree + " Available");
-        occupiedLabel.setText(totalOccupied + " Occupied");
+        occupiedLabel.setText((spots.size() - totalFree) + " Occupied");
 
         for (ParkingSpotType type : ParkingSpotType.values()) {
             long totalOfType = spots.stream().filter(s -> s.getType() == type).count();
-            long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
             if (totalOfType == 0) continue;
+            long freeOfType = spots.stream().filter(s -> s.getType() == type && s.isFree()).count();
             VBox box = new VBox(2);
             box.setAlignment(Pos.CENTER);
-            box.setPadding(new Insets(5, 10, 5, 10));
-            box.setStyle("-fx-background-color: #1a1a1a; -fx-background-radius: 5;");
+            box.setPadding(new Insets(5, 12, 5, 12));
+            box.setStyle("-fx-background-color: #1a1a1a; -fx-background-radius: 6;");
             Label typeLbl = new Label(type.toString());
             typeLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #b2bec3;");
             String countText = (freeOfType == 0) ? "FULL" : String.valueOf(freeOfType);
@@ -157,13 +147,13 @@ public class ParkingDisplayBoard {
     private VBox buildSpotCard(ParkingSpot spot) {
         VBox card = new VBox(6);
         card.setAlignment(Pos.CENTER);
-        card.setPrefSize(120, 90);
+        card.setPrefSize(130, 100);
         card.setPadding(new Insets(10));
         boolean free = spot.isFree();
         String color = free ? "#00b894" : "#d63031";
-        card.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: " + color + "; -fx-border-width: 2; -fx-border-radius: 8; -fx-background-radius: 8;");
+        card.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: " + color + "; -fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10;");
         Label num = new Label(spot.getNumber());
-        num.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+        num.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
         Label status = new Label(free ? "FREE" : "OCCUPIED");
         status.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: white;");
         card.getChildren().addAll(num, status);
