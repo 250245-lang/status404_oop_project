@@ -5,6 +5,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import parkinglot.models.ParkingLot;
 import parkinglot.models.ParkingRate;
 import parkinglot.users.Account;
+import parkinglot.users.Person;
 import parkinglot.utils.LoginResponse;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +51,10 @@ public class APIManager {
         return accounts != null ? Arrays.asList(accounts) : List.of();
     }
 
+    public Account getCurrentAccount() {
+        return restTemplate.getForObject(serverAddress + "/api/accounts/me", Account.class);
+    }
+
     public void deleteAccount(String username) {
         restTemplate.delete(serverAddress + "/api/accounts/" + username);
     }
@@ -59,6 +64,17 @@ public class APIManager {
                 .queryParam("pass", newPassword)
                 .toUriString();
         restTemplate.postForObject(url, null, Void.class);
+    }
+
+    public void changePassword(String newPassword) {
+        String url = UriComponentsBuilder.fromUriString(serverAddress + "/api/accounts/me/password")
+                .queryParam("pass", newPassword)
+                .toUriString();
+        restTemplate.postForObject(url, null, Void.class);
+    }
+
+    public void updatePerson(String username, Person person) {
+        restTemplate.postForObject(serverAddress + "/api/accounts/" + username + "/person", person, Void.class);
     }
 
     public void deleteFloor(String floorName) {
@@ -110,6 +126,7 @@ public class APIManager {
         return null;
     }
 
+    public ServerAddress getServerAddress() { return serverAddress; }
     public void clearToken(){ this.authToken = null; }
     public boolean isLoggedIn() { return authToken != null && !authToken.isEmpty(); }
     public String checkHealth() { return restTemplate.getForObject(serverAddress + "/health", String.class); }
