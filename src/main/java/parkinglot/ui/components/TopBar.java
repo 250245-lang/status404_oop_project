@@ -1,6 +1,5 @@
 package parkinglot.ui.components;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -11,66 +10,58 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import parkinglot.managers.AppContext;
-import parkinglot.ui.hardware.EntrancePanelWindow;
-import parkinglot.ui.hardware.ExitPanelWindow;
 import parkinglot.ui.login_system.LoginWindow;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import parkinglot.ui.login_system.ProfileWindow;
+import parkinglot.users.Admin;
+import parkinglot.users.ParkingAttendant;
 
 public class TopBar extends BorderPane {
     private final AppContext appContext;
-    private final Label clockLabel = new Label();
-    private final ScheduledExecutorService clockScheduler = Executors.newSingleThreadScheduledExecutor();
 
     public TopBar(AppContext appContext, String title) {
         this.appContext = appContext;
         
-        VBox leftBox = new VBox(2);
+        // Left side: Title/Label to fill the gap
         Label titleLabel = new Label(title);
-        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 18));
+        titleLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
         
-        clockLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #7f8c8d;");
-        leftBox.getChildren().addAll(titleLabel, clockLabel);
+        // Right side: User Info & Actions
+        VBox rightSide = createRightSide();
         
-        HBox actions = new HBox(15);
-        actions.setAlignment(Pos.CENTER_RIGHT);
+        this.setLeft(titleLabel);
+        this.setRight(rightSide);
+        BorderPane.setAlignment(titleLabel, Pos.CENTER_LEFT);
+        BorderPane.setAlignment(rightSide, Pos.CENTER_RIGHT);
+        
+        this.setPadding(new Insets(10, 20, 10, 20));
+        // Simple and neat styling
+        this.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-width: 0 0 1 0;");
+    }
 
-        Button entranceBtn = new Button("Open Entrance");
-        entranceBtn.setOnAction(e -> new EntrancePanelWindow(appContext).show());
-        
-        Button exitBtn = new Button("Open Exit");
-        exitBtn.setOnAction(e -> new ExitPanelWindow(appContext).show());
+    private VBox createRightSide() {
+        String roleName = (appContext.account instanceof Admin) ? "Admin" : "Attendant";
 
-        Button logoutBtn = new Button("Logout");
-        logoutBtn.setStyle("-fx-background-color: #d63031; -fx-text-fill: white; -fx-font-weight: bold;");
+        Label userLabel = new Label("Logged in as: " + appContext.account.getUserName() + " (" + roleName + ")");
+        userLabel.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
+
+        Button profileBtn = new Button("My Profile");
+        profileBtn.setOnAction(e -> new ProfileWindow(appContext).show());
+
+        Button refreshBtn = new Button("Refresh Data");
+        refreshBtn.setStyle("-fx-background-color: #0984e3; -fx-text-fill: white; -fx-font-weight: bold;");
+        refreshBtn.setOnAction(e -> new Thread(() -> appContext.syncData()).start());
+
+        Button logoutBtn = new Button("Log Out");
         logoutBtn.setOnAction(e -> {
-            clockScheduler.shutdownNow();
-            appContext.apiManager.clearToken();
-            appContext.setAccount(null);
+            appContext.logOut();
             new LoginWindow(appContext).show();
         });
 
-        actions.getChildren().addAll(entranceBtn, exitBtn, logoutBtn);
+        HBox actions = new HBox(10, refreshBtn, profileBtn, logoutBtn);
+        actions.setAlignment(Pos.CENTER_RIGHT);
 
-        this.setLeft(leftBox);
-        this.setRight(actions);
-        
-        BorderPane.setAlignment(leftBox, Pos.CENTER_LEFT);
-        
-        this.setPadding(new Insets(10, 20, 10, 20));
-        this.setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #dee2e6; -fx-border-width: 0 0 1 0;");
-
-        startClock();
-    }
-
-    private void startClock() {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEE, MMM d, yyyy  HH:mm:ss");
-        clockScheduler.scheduleAtFixedRate(() -> {
-            String time = LocalDateTime.now().format(formatter);
-            Platform.runLater(() -> clockLabel.setText(time));
-        }, 0, 1, TimeUnit.SECONDS);
+        VBox container = new VBox(5, userLabel, actions);
+        container.setAlignment(Pos.TOP_RIGHT);
+        return container;
     }
 }
