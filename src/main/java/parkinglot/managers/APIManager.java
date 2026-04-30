@@ -103,6 +103,14 @@ public class APIManager {
         return restTemplate.getForObject(serverAddress + "/api/parking/tickets/" + ticketNumber, ParkingTicket.class);
     }
 
+    public void startCharging(String spotNumber) {
+        restTemplate.postForObject(serverAddress + "/api/parking/charging/" + spotNumber + "/start", null, Void.class);
+    }
+
+    public void stopCharging(String spotNumber) {
+        restTemplate.postForObject(serverAddress + "/api/parking/charging/" + spotNumber + "/stop", null, Void.class);
+    }
+
     public void updateRates(ParkingRate rates) {
         restTemplate.postForObject(serverAddress + "/api/parking/rates", rates, Void.class);
     }
