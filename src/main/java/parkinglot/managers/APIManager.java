@@ -2,8 +2,10 @@ package parkinglot.managers;
 
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import parkinglot.constants.VehicleType;
 import parkinglot.models.ParkingLot;
 import parkinglot.models.ParkingRate;
+import parkinglot.models.ParkingTicket;
 import parkinglot.users.Account;
 import parkinglot.users.Person;
 import parkinglot.utils.LoginResponse;
@@ -87,6 +89,18 @@ public class APIManager {
 
     public void deleteTicket(String ticketNumber) {
         restTemplate.delete(serverAddress + "/api/parking/tickets/" + ticketNumber);
+    }
+
+    public ParkingTicket issueTicket(String license, VehicleType type) {
+        String url = UriComponentsBuilder.fromUriString(serverAddress + "/api/parking/issue-ticket")
+                .queryParam("license", license)
+                .queryParam("type", type)
+                .toUriString();
+        return restTemplate.postForObject(url, null, ParkingTicket.class);
+    }
+
+    public ParkingTicket getTicket(String ticketNumber) {
+        return restTemplate.getForObject(serverAddress + "/api/parking/tickets/" + ticketNumber, ParkingTicket.class);
     }
 
     public void updateRates(ParkingRate rates) {
