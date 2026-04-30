@@ -5,5 +5,4 @@ import org.springframework.stereotype.Repository;
 import parkinglot.models.ParkingLot;
 
 @Repository
-public interface ParkingLotRepository extends JpaRepository<ParkingLot, String> {
-}
+public interface ParkingLotRepository extends JpaRepository<ParkingLot, String> {}

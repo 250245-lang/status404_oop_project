@@ -10,8 +10,7 @@ import parkinglot.models.Location;
 import parkinglot.models.ParkingFloor;
 import parkinglot.models.ParkingLot;
 import parkinglot.models.spots.*;
-import parkinglot.users.Admin;
-import parkinglot.users.Person;
+import parkinglot.users.*;
 import parkinglot.server.repository.AccountRepository;
 import parkinglot.server.repository.ParkingLotRepository;
 
@@ -25,20 +24,9 @@ public class ServerApplication {
     }
 
     @Bean
-    public CommandLineRunner initData(AccountRepository accountRepo, ParkingLotRepository parkingLotRepo) {
+    public CommandLineRunner initData(ParkingLotRepository repo, AccountRepository accountRepo) {
         return args -> {
-            if (accountRepo.count() == 0) {
-                Person adminInfo = new Person("System Admin",
-                        new Location("Movarounnahra street 1", "Tashkent", "TSH", "100", "UZB"),
-                        "admin@newuu.uz", "998901234567");
-
-                Admin admin = new Admin("admin", "admin", adminInfo);
-                accountRepo.save(admin);
-
-                System.out.println("Default Admin account created: admin/admin");
-            }
-
-            if (parkingLotRepo.count() == 0) {
+            if (repo.count() == 0) {
                 ParkingLot lot = new ParkingLot("L1", "University Lot",
                         new Location("123 Uni St", "Tashkent", "UZ", "1000", "UZB"));
 
@@ -54,11 +42,32 @@ public class ServerApplication {
                 f2.addParkingSlot(new HandicappedSpot("H201"));
                 f2.addParkingSlot(new LargeSpot("L201"));
 
+                ParkingFloor f3 = new ParkingFloor("Basement 1");
+                f3.addParkingSlot(new ElectricSpot("E001"));
+                f3.addParkingSlot(new MotorbikeSpot("M001"));
+
                 lot.addParkingFloor(f1);
                 lot.addParkingFloor(f2);
-                
-                parkingLotRepo.save(lot);
-                System.out.println("Demo Parking Lot created with 2 floors!");
+                lot.addParkingFloor(f3);
+                repo.save(lot);
+                System.out.println("Demo Parking Lot created in SQLite!");
+            }
+            if (accountRepo.count() == 0) {
+                Person adminInfo = new Person("System Admin",
+                        new Location("Movarounnahra street 1", "Tashkent", "TSH", "100", "UZB"),
+                        "admin@newuu.uz", "998901234567");
+
+                Admin admin = new Admin("admin", "admin", adminInfo);
+                accountRepo.save(admin);
+
+                // Add a Parking Attendant
+                Person attInfo = new Person("John Attendant", null, "john@parking.com", "998901112233");
+                ParkingAttendant attendant = new ParkingAttendant("attendant", "attendant", attInfo);
+                accountRepo.save(attendant);
+
+                System.out.println("Default accounts created:");
+                System.out.println("Admin: admin/admin");
+                System.out.println("Attendant: attendant/attendant");
             }
         };
     }
