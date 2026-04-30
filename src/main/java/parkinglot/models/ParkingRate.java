@@ -3,6 +3,9 @@ package parkinglot.models;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Entity
 public class ParkingRate {
 
@@ -13,6 +16,7 @@ public class ParkingRate {
     private double secondHourRate = 3.5;
     private double thirdHourRate = 3.5;
     private double remainingHourRate = 2.5;
+    private double electricChargingRate = 5.0; // New: $5 per hour/minute
 
     public ParkingRate() {}
 
@@ -39,10 +43,16 @@ public class ParkingRate {
 
     public double getFirstHourRate() { return firstHourRate; }
     public void setFirstHourRate(double firstHourRate) { this.firstHourRate = firstHourRate; }
+
     public double getSecondHourRate() { return secondHourRate; }
     public void setSecondHourRate(double secondHourRate) { this.secondHourRate = secondHourRate; }
+
     public double getThirdHourRate() { return thirdHourRate; }
     public void setThirdHourRate(double thirdHourRate) { this.thirdHourRate = thirdHourRate; }
+
     public double getRemainingHourRate() { return remainingHourRate; }
     public void setRemainingHourRate(double remainingHourRate) { this.remainingHourRate = remainingHourRate; }
+
+    public double getElectricChargingRate() { return electricChargingRate; }
+    public void setElectricChargingRate(double rate) { this.electricChargingRate = rate; }
 }
