@@ -1,41 +1,44 @@
 package parkinglot.ui.admin;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.Stage;
 import parkinglot.managers.AppContext;
-import parkinglot.ui.components.TopBar;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import parkinglot.ui.login_system.LoginWindow;
+import parkinglot.ui.login_system.ProfileWindow;
 
 public class AdminWindow {
     private final AppContext appContext;
-    private ScheduledExecutorService scheduler;
+    private final Stage stage;
 
     public AdminWindow(AppContext appContext) {
         this.appContext = appContext;
+        this.stage = appContext.stage;
     }
 
     public void show() {
-        if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdownNow();
-        }
+        stage.setTitle("Admin Panel - Parking Lot System");
 
         TabPane tabPane = new TabPane();
+        
+        // Real tabs
         Tab dashboardTab = new Tab("Dashboard", new DashboardTab(appContext).getContent());
-        Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext).getContent());
-        Tab userTab = new Tab("Users", new UsersTab(appContext).getContent());
-        Tab rateTab = new Tab("Rates", new RatesTab(appContext).getContent());
-        Tab ticketsTab = new Tab("Tickets", new TicketsTab(appContext).getContent());
+        Tab floorTab = new Tab("Floors", new FloorManagerTab(appContext, this::refreshData).getContent());
+        Tab userTab = new Tab("Users", new UsersTab(appContext, this::refreshData).getContent());
+        Tab ticketsTab = new Tab("Tickets", new TicketsTab(appContext, this::refreshData).getContent());
+        Tab rateTab = new Tab("Rates", new RatesTab(appContext, this::refreshData).getContent());
 
-        tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, rateTab, ticketsTab);
+        tabPane.getTabs().addAll(dashboardTab, floorTab, userTab, ticketsTab, rateTab);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
 
-        TopBar topBar = new TopBar(appContext, "Admin Management Portal");
+        // Reusable TopBar
+        parkinglot.ui.components.TopBar topBar = new parkinglot.ui.components.TopBar(appContext, "Admin Management Portal");
 
         BorderPane root = new BorderPane();
         root.setCenter(tabPane);
@@ -44,25 +47,29 @@ public class AdminWindow {
 
         appContext.resetToView(root, "Admin Panel - Parking Lot System", 1000, 700, true);
         
+        // Initial data fetch
         refreshData();
 
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleAtFixedRate(() -> {
-            Platform.runLater(() -> {
-                if (tabPane.getScene() != null && tabPane.getScene().getWindow().isShowing()) {
-                    if (tabPane.getSelectionModel().getSelectedItem() == dashboardTab ||
-                        tabPane.getSelectionModel().getSelectedItem() == ticketsTab) {
-                        refreshData();
-                    }
-                } else {
-                    scheduler.shutdown();
-                }
-            });
-        }, 5, 5, TimeUnit.SECONDS);
+        // Auto-refresh Dashboard if selected
+        java.util.concurrent.ScheduledExecutorService scheduler = java.util.concurrent.Executors.newSingleThreadScheduledExecutor();
+        scheduler.scheduleAtFixedRate(() -> javafx.application.Platform.runLater(() -> {
+            System.out.println("Auto syncing...");
+            System.out.println(tabPane.getSelectionModel());
+            System.out.println(tabPane.getSelectionModel().getSelectedItem());
+            if (tabPane.getScene() != null && (
+                    tabPane.getSelectionModel().getSelectedItem() == dashboardTab ||
+                            tabPane.getSelectionModel().getSelectedItem() == ticketsTab
+            )) {
+                refreshData();
+            } else if (tabPane.getScene() == null) {
+                System.out.println("Auto syncing stop...");
+                scheduler.shutdown();
+            }
+        }), 3, 3, java.util.concurrent.TimeUnit.SECONDS);
     }
 
     public void refreshData() {
-        new Thread(() -> appContext.apiManager.syncData()).start();
+        appContext.syncData();
     }
 
     private Node createPlaceholder(String text) {
