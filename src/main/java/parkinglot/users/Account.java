@@ -11,7 +11,7 @@ import parkinglot.constants.AccountStatus;
 @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "type"
+        property = "type" // This is the field Jackson will look for in the JSON
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Admin.class, name = "ADMIN"),
@@ -40,18 +40,30 @@ public abstract class Account {
     }
 
     public boolean login(String userName, String password) {
-        if (status != AccountStatus.ACTIVE) return false;
-        return this.userName != null && this.userName.equals(userName) && 
-               this.password != null && this.password.equals(password);
+        if (status != AccountStatus.ACTIVE) {
+            System.out.println("Account is not active. Status: " + status);
+            return false;
+        }
+        if (this.userName != null && this.userName.equals(userName) && 
+            this.password != null && this.password.equals(password)) {
+            System.out.println("Login successful for user: " + userName);
+            return true;
+        }
+        System.out.println("Invalid credentials for user: " + userName);
+        return false;
     }
 
     // Getters and Setters
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }
+
     public AccountStatus getStatus() { return status; }
     public void setStatus(AccountStatus status) { this.status = status; }
+
     public Person getPerson() { return person; }
     public void setPerson(Person person) { this.person = person; }
-    public String getPassword() { return password; }
+
     public void setPassword(String password) { this.password = password; }
+    public String getPassword() { return password; }
+
 }
